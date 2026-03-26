@@ -220,6 +220,16 @@
 							<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
 						</svg>
 					</a>
+					<a href="/reviews/new" class="action-card">
+						<span class="action-card__icon">⭐</span>
+						<div>
+							<strong>Leave a review</strong>
+							<span>Rate your helpers</span>
+						</div>
+						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+							<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+						</svg>
+					</a>
 				</div>
 
 				<section class="my-requests-section">
@@ -256,7 +266,7 @@
 												<div class="driver-main-info">
 													<span class="badge badge-accepted">✓ Driver on the way</span>
 													<div class="driver-profile">
-														<span class="driver-name">{req.driver_rel.name}</span>
+														<a href="/drivers/{req.driver_rel.id}" class="driver-name">{req.driver_rel.name}</a>
 														<a href="tel:{req.driver_rel.phone}" class="driver-phone-link">
 															<span class="phone-icon">📞</span> {req.driver_rel.phone}
 														</a>
@@ -448,4 +458,6 @@
 	    display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800;
 	    flex-shrink: 0; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 	}
+	.driver-name { color: var(--text-primary); text-decoration: none; }
+	.driver-name:hover { text-decoration: underline; }
 </style>

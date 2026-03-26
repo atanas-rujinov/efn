@@ -29,20 +29,24 @@ declare module "$app/types" {
 	type MatcherParam<M> = M extends (param : string) => param is (infer U extends string) ? U : string;
 
 	export interface AppTypes {
-		RouteId(): "/(app)" | "/" | "/(app)/dashboard" | "/login" | "/(app)/requests" | "/(app)/requests/new" | "/signup";
+		RouteId(): "/(app)" | "/" | "/(app)/dashboard" | "/(app)/drivers" | "/(app)/drivers/[id]" | "/login" | "/(app)/requests" | "/(app)/requests/new" | "/(app)/reviews" | "/(app)/reviews/new" | "/signup";
 		RouteParams(): {
-			
+			"/(app)/drivers/[id]": { id: string }
 		};
 		LayoutParams(): {
-			"/(app)": Record<string, never>;
-			"/": Record<string, never>;
+			"/(app)": { id?: string };
+			"/": { id?: string };
 			"/(app)/dashboard": Record<string, never>;
+			"/(app)/drivers": { id?: string };
+			"/(app)/drivers/[id]": { id: string };
 			"/login": Record<string, never>;
 			"/(app)/requests": Record<string, never>;
 			"/(app)/requests/new": Record<string, never>;
+			"/(app)/reviews": Record<string, never>;
+			"/(app)/reviews/new": Record<string, never>;
 			"/signup": Record<string, never>
 		};
-		Pathname(): "/" | "/dashboard" | "/login" | "/requests/new" | "/signup";
+		Pathname(): "/" | "/dashboard" | `/drivers/${string}` & {} | "/login" | "/requests/new" | "/reviews/new" | "/signup";
 		ResolvedPathname(): `${"" | `/${string}`}${ReturnType<AppTypes['Pathname']>}`;
 		Asset(): string & {};
 	}

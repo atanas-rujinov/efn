@@ -1,5 +1,5 @@
-from pydantic import BaseModel, Field
-from typing import Optional
+from pydantic import BaseModel, EmailStr, Field
+from typing import Optional, List, Dict
 from datetime import datetime
 
 
@@ -132,11 +132,8 @@ class DriveRequestOut(BaseModel):
     dest_lon: float
     is_completed: bool
     is_accepted: Optional[bool] = None
-    
-    # Change this from Optional[int] to the full DriverOut model
-    # We use the alias "driver_rel" to match the relationship name in models.py
-    driver: Optional[DriverOut] = Field(None, alias="driver_rel") 
-    
+
+    driver: Optional[DriverOut] = Field(None, alias="driver_rel")
     disabled: DisabledOut = Field(alias="disabled_rel")
 
     model_config = {"from_attributes": True, "populate_by_name": True}
@@ -192,7 +189,7 @@ class ShopRequestOut(BaseModel):
 # ── Review ───────────────────────────────────────────────────────────────────
 
 class ReviewBase(BaseModel):
-    rating: int
+    rating: int = Field(..., ge=1, le=5)  # Rating must be 1-5 stars
     comment: Optional[str] = None
     driver: int
     author: int
@@ -201,7 +198,7 @@ class ReviewCreate(ReviewBase):
     pass
 
 class ReviewUpdate(BaseModel):
-    rating: Optional[int] = None
+    rating: Optional[int] = Field(None, ge=1, le=5)
     comment: Optional[str] = None
     driver: Optional[int] = None
     author: Optional[int] = None
@@ -216,6 +213,18 @@ class ReviewOut(BaseModel):
 
     model_config = {"from_attributes": True}
 
+class ReviewWithDriverName(ReviewOut):
+    driver_name: str
+
+class DriverStatsOut(BaseModel):
+    driver_id: int
+    driver_name: str
+    average_rating: float
+    total_reviews: int
+    recent_reviews: List[ReviewWithDriverName]
+    group_ratings: Dict[str, float]
+
+
 # ── Other Request ───────────────────────────────────────────────────────────
 
 class OtherRequestBase(BaseModel):
@@ -229,10 +238,8 @@ class OtherRequestBase(BaseModel):
     driver: Optional[int] = None
     disabled: Optional[int] = None
 
-
 class OtherRequestCreate(OtherRequestBase):
     pass
-
 
 class OtherRequestUpdate(BaseModel):
     description: Optional[str] = None
@@ -243,7 +250,6 @@ class OtherRequestUpdate(BaseModel):
     is_accepted: Optional[bool] = None
     driver: Optional[int] = None
     disabled: Optional[int] = None
-
 
 class OtherRequestOut(BaseModel):
     id: int

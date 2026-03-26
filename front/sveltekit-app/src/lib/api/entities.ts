@@ -110,16 +110,20 @@ export const shopRequestsApi = {
 
 export interface Review {
     id: number;
-    user_id: number;
-    driver_id: number;
+    created_at: string;
     rating: number;
-    comment?: string;
+    comment?: string | null;
+    driver: number; // driver id
+    author: number; // disabled user id
+    driver_name?: string; // present on ReviewWithDriverName responses
     [key: string]: unknown;
 }
 
 export const reviewsApi = {
     list: () => api.get<Review[]>("/reviews/"),
     get: (id: number) => api.get<Review>(`/reviews/${id}`),
+    myReviews: () => api.get<Review[]>("/reviews/my-reviews"),
+    driverStats: (id: number) => api.get(`/reviews/driver/${id}`), // 👈
     create: (data: Partial<Review>) => api.post<Review>("/reviews/", data),
     update: (id: number, data: Partial<Review>) =>
         api.patch<Review>(`/reviews/${id}`, data),

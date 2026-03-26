@@ -3,26 +3,31 @@ import os
 import time
 from typing import Dict, List, Optional, Tuple
 
+import requests
+from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 
 import models
 
-try:
-    from google import genai
-except Exception:
-    genai = None
+load_dotenv()
+
+GEMINI_API_URL = (
+    "https://generativelanguage.googleapis.com/v1beta/models"
+    "/{model}:generateContent?key={api_key}"
+)
 
 
 class GeminiDisabilityGrouper:
     def __init__(self, api_key: Optional[str] = None, model: str = "gemini-2.0-flash"):
         self.api_key = api_key or os.getenv("GEMINI_API_KEY")
         self.model = model
-        self.client = genai.Client(api_key=self.api_key) if (genai and self.api_key) else None
+        if not self.api_key:
+            print("[Gemini] GEMINI_API_KEY not set — using fallback grouping.")
 
     def group_disabilities(self, disabilities: List[str]) -> List[dict]:
         if not disabilities:
             return []
-        if not self.client:
+        if not self.api_key:
             return self._fallback_groups(disabilities)
         try:
             prompt = "\n".join(
@@ -31,7 +36,7 @@ class GeminiDisabilityGrouper:
                     "Each item must appear exactly once.",
                     "Do not add new items.",
                     "Keep groups practical (e.g., visual, hearing, mobility, cognitive).",
-                    "Return ONLY JSON in this format:",
+                    "Return ONLY valid JSON, no markdown, no backticks, in this format:",
                     '{"groups":[{"label":"string","items":["string"]}]}',
                     "",
                     "Input:",
@@ -39,16 +44,26 @@ class GeminiDisabilityGrouper:
                 ]
             )
 
-            response = self.client.models.generate_content(
-                model=self.model,
-                contents=prompt,
-                config={"response_mime_type": "application/json", "temperature": 0},
-            )
-            parsed = json.loads(response.text)
+            url = GEMINI_API_URL.format(model=self.model, api_key=self.api_key)
+            body = {
+                "contents": [{"parts": [{"text": prompt}]}],
+                "generationConfig": {"temperature": 0},
+            }
+            resp = requests.post(url, json=body, timeout=15)
+            
+            resp.raise_for_status()
+
+            data = resp.json()
+            text = data["candidates"][0]["content"]["parts"][0]["text"]
+            # Strip markdown fences if model ignores the instruction
+            text = text.strip().lstrip("```json").lstrip("```").rstrip("```").strip()
+            parsed = json.loads(text)
+            print(parsed)
             groups = parsed.get("groups", [])
+            print(f"[Gemini] Grouped {len(disabilities)} disabilities into {len(groups)} groups.")
             return groups if isinstance(groups, list) else self._fallback_groups(disabilities)
-        except Exception:
-            # Quota/network/model failures should never break the profile endpoint.
+        except Exception as e:
+            print(f"[Gemini] API call failed: {e} — using fallback grouping.")
             return self._fallback_groups(disabilities)
 
     def _fallback_groups(self, disabilities: List[str]) -> List[dict]:
@@ -105,25 +120,29 @@ def get_disability_to_group_map(db: Session, ttl_seconds: int = 900) -> Dict[str
             if key:
                 mapping[key] = label
 
-    _GROUP_CACHE["map"] = mapping
-    _GROUP_CACHE["expires_at"] = now + ttl_seconds
-    return mapping
+    # Only cache if Gemini actually responded (mapping is non-empty or disabilities is empty)
+    if mapping or not disabilities:
+        _GROUP_CACHE["map"] = mapping
+        _GROUP_CACHE["expires_at"] = now + ttl_seconds
+    else:
+        # Gemini failed/fell back — retry on next request instead of caching empty/fallback result
+        _GROUP_CACHE["map"] = mapping  # still use it for this request
+        _GROUP_CACHE["expires_at"] = now + 5  # but expire in 5s so we retry soon
+        print("[Gemini] Fallback result not cached long-term — will retry in 5s.")
 
+    return mapping
 
 def compute_group_ratings(
     review_rows: List[Tuple[models.Review, Optional[str]]],
     disability_to_group: Dict[str, str],
-) -> List[dict]:
+) -> Dict[str, float]:
     buckets: Dict[str, List[int]] = {}
     for review, disability in review_rows:
         d = (disability or "").strip()
         group = disability_to_group.get(d, "Other")
         buckets.setdefault(group, []).append(int(review.rating))
 
-    results = []
-    for label, ratings in sorted(buckets.items(), key=lambda kv: kv[0].lower()):
-        total = len(ratings)
-        avg = round(sum(ratings) / total, 2) if total else 0.0
-        results.append({"label": label, "average_rating": avg, "total_reviews": total})
-    return results
-
+    return {
+        label: round(sum(ratings) / len(ratings), 2)
+        for label, ratings in sorted(buckets.items(), key=lambda kv: kv[0].lower())
+    }

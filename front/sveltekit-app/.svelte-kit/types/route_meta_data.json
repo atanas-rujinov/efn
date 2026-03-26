@@ -1,7 +1,9 @@
 {
 	"/": [],
 	"/(app)/dashboard": [],
+	"/(app)/drivers/[id]": [],
 	"/login": [],
 	"/(app)/requests/new": [],
+	"/(app)/reviews/new": [],
 	"/signup": []
 }
