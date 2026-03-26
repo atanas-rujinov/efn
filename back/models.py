@@ -61,6 +61,7 @@ class DriveRequest(Base):
     dest_lat = Column(Double, nullable=False)
     dest_lon = Column(Double, nullable=False)
     is_completed = Column(Boolean, nullable=False)
+    is_accepted = Column(Boolean, nullable=True)
     driver = Column(BigInteger, ForeignKey("driver.id"), nullable=True)   # nullable: no driver assigned yet
     disabled = Column(BigInteger, ForeignKey("disabled.id"), nullable=False)
 

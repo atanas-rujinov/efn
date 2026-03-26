@@ -98,6 +98,7 @@ class DriveRequestBase(BaseModel):
     dest_lat: float
     dest_lon: float
     is_completed: bool = False
+    is_accepted: Optional[bool] = None
 
     driver: Optional[int] = None
     disabled: Optional[int] = None
@@ -114,6 +115,7 @@ class DriveRequestUpdate(BaseModel):
     dest_lat: Optional[float] = None
     dest_lon: Optional[float] = None
     is_completed: Optional[bool] = None
+    is_accepted: Optional[bool] = None
     driver: Optional[int] = None
     disabled: Optional[int] = None
 
@@ -128,6 +130,7 @@ class DriveRequestOut(BaseModel):
     dest_lat: float
     dest_lon: float
     is_completed: bool
+    is_accepted: Optional[bool] = None
     driver: Optional[int] = None
     disabled: DisabledOut = Field(alias="disabled_rel")
 
