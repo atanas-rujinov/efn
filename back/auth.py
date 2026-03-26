@@ -20,7 +20,10 @@ SECRET_KEY = os.getenv("JWT_SECRET", "change-me")
 ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", 60))
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# NOTE: passlib+bcrypt is currently incompatible with the installed bcrypt backend
+# in this environment (it raises on >72-byte secrets during backend self-check).
+# Using PBKDF2 avoids bcrypt backend issues on Windows and is sufficient for this app.
+pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 bearer_scheme = HTTPBearer()
 
 

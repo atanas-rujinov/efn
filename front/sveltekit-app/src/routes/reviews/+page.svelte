@@ -3,7 +3,7 @@
 	import { auth } from '$lib/stores/auth';
 	import { notifications } from '$lib/stores/notifications';
 	import { driveRequestsApi, reviewsApi, driversApi } from '$lib/api/entities';
-	import type { DriveRequest, Driver } from '$lib/api/entities';
+import type { DriveRequest, Driver, Review } from '$lib/api/entities';
 	import { onMount } from 'svelte';
 	import ReviewForm from '$lib/components/ReviewForm.svelte';
 	import ReviewCard from '$lib/components/ReviewCard.svelte';
@@ -14,10 +14,16 @@
 	let selectedRequest: DriveRequest | null = null;
 	let selectedDriver: Driver | null = null;
 	let existingReviews: any[] = [];
+let currentReview: Review | null = null;
 	let loading = false;
 	let driverId: number | null = null;
+let preselectedRequestId: number | null = null;
 
 	onMount(() => {
+		const params = new URLSearchParams(window.location.search);
+		const requestIdParam = Number(params.get('requestId'));
+		preselectedRequestId = Number.isFinite(requestIdParam) && requestIdParam > 0 ? requestIdParam : null;
+
 		const unsubAuth = auth.isAuthenticated.subscribe((val) => {
 			if (!val) goto('/login');
 		});
@@ -40,8 +46,15 @@
 			const allRequests = await driveRequestsApi.list();
 			// Filter for completed requests by the current user
 			completedRequests = allRequests.filter(
-				(r) => r.is_completed && r.disabled === $user?.id
+				(r) => r.is_completed && r.disabled_rel?.id === $user?.id
 			);
+			if (preselectedRequestId) {
+				const preferred = completedRequests.find((r) => r.id === preselectedRequestId);
+				if (preferred) {
+					preselectedRequestId = null;
+					await selectRequest(preferred);
+				}
+			}
 		} catch (error) {
 			console.error('Failed to fetch requests:', error);
 			notifications.error('Failed to load your requests.');
@@ -68,6 +81,7 @@
 			existingReviews = allReviews.filter(
 				(r) => r.driver === driverId && r.author === $user?.id
 			);
+			currentReview = existingReviews.length > 0 ? (existingReviews[0] as Review) : null;
 		} catch (error) {
 			console.error('Failed to fetch driver info:', error);
 			notifications.error('Failed to load driver information.');
@@ -78,6 +92,7 @@
 		selectedRequest = null;
 		selectedDriver = null;
 		existingReviews = [];
+	currentReview = null;
 	}
 
 	function handleReviewSuccess() {
@@ -155,20 +170,18 @@
 				<button class="back-btn" on:click={back}>← Back</button>
 
 				<div class="review-container">
-					{#if existingReviews.length > 0}
+					{#if currentReview}
 						<div class="existing-reviews">
-							<h2>Your review for {selectedDriver.name}</h2>
-							{#each existingReviews as review (review.id)}
-								<ReviewCard {review} driver={selectedDriver} />
-							{/each}
+							<h2>Your current review for {selectedDriver.name}</h2>
+							<ReviewCard review={currentReview} driver={selectedDriver} />
 						</div>
-					{:else}
-						<ReviewForm
-							driver={selectedDriver}
-							authorId={$user?.id || 0}
-							onSuccess={handleReviewSuccess}
-						/>
 					{/if}
+					<ReviewForm
+						driver={selectedDriver}
+						authorId={$user?.id || 0}
+						existingReview={currentReview}
+						onSuccess={handleReviewSuccess}
+					/>
 				</div>
 			</div>
 		{/if}

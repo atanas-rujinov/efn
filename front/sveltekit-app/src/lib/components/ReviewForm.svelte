@@ -1,15 +1,27 @@
 <script lang="ts">
 	import { notifications } from '$lib/stores/notifications';
 	import { reviewsApi } from '$lib/api/entities';
-	import type { Driver } from '$lib/api/entities';
+	import type { Driver, Review } from '$lib/api/entities';
 
 	export let driver: Driver;
 	export let authorId: number;
+	export let existingReview: Review | null = null;
 	export let onSuccess: (() => void) | undefined = undefined;
 
-	let rating = 5;
-	let comment = '';
+	let rating = existingReview?.rating ?? 5;
+	let comment = existingReview?.comment ?? '';
 	let loading = false;
+	let hydratedFromReviewId: number | null = null;
+
+	// Hydrate once per review id so user typing is not overwritten.
+	$: {
+		const nextId = existingReview?.id ?? null;
+		if (nextId !== hydratedFromReviewId) {
+			hydratedFromReviewId = nextId;
+			rating = existingReview?.rating ?? 5;
+			comment = existingReview?.comment ?? '';
+		}
+	}
 
 	async function handleSubmit() {
 		if (!driver?.id) {
@@ -19,15 +31,23 @@
 
 		loading = true;
 		try {
-			await reviewsApi.create({
-				rating,
-				comment: comment || undefined,
-				driver: driver.id,
-				author: authorId
-			});
-			notifications.success('Review submitted successfully!');
-			rating = 5;
-			comment = '';
+			if (existingReview?.id) {
+				await reviewsApi.update(existingReview.id, {
+					rating,
+					comment: comment || undefined
+				});
+				notifications.success('Review updated successfully!');
+			} else {
+				await reviewsApi.create({
+					rating,
+					comment: comment || undefined,
+					driver: driver.id,
+					author: authorId
+				});
+				notifications.success('Review submitted successfully!');
+				rating = 5;
+				comment = '';
+			}
 			onSuccess?.();
 		} catch (error: any) {
 			if (error.detail) {
@@ -43,7 +63,7 @@
 
 <div class="review-card">
 	<div class="review-header">
-		<h3>Rate your experience</h3>
+		<h3>{existingReview ? 'Update your review' : 'Rate your experience'}</h3>
 		<p class="helper-name">{driver.name}</p>
 	</div>
 
@@ -80,7 +100,7 @@
 		</div>
 
 		<button type="submit" class="submit-btn" disabled={loading}>
-			{loading ? 'Submitting...' : 'Submit Review'}
+			{loading ? 'Saving...' : existingReview ? 'Update Review' : 'Submit Review'}
 		</button>
 	</form>
 </div>

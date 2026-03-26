@@ -51,6 +51,7 @@ declare module '$env/static/private' {
 	export const CommonProgramW6432: string;
 	export const COMPUTERNAME: string;
 	export const ComSpec: string;
+	export const CURSOR_TRACE_ID: string;
 	export const DriverData: string;
 	export const EDITOR: string;
 	export const GIT_ASKPASS: string;
@@ -104,8 +105,6 @@ declare module '$env/static/private' {
 	export const PT8HOME: string;
 	export const PUBLIC: string;
 	export const PYDEVD_DISABLE_FILE_VALIDATION: string;
-	export const PYTHONSTARTUP: string;
-	export const PYTHON_BASIC_REPL: string;
 	export const SESSIONNAME: string;
 	export const STM32CubeMX_PATH: string;
 	export const SystemDrive: string;
@@ -124,9 +123,9 @@ declare module '$env/static/private' {
 	export const VSCODE_GIT_ASKPASS_EXTRA_ARGS: string;
 	export const VSCODE_GIT_ASKPASS_MAIN: string;
 	export const VSCODE_GIT_ASKPASS_NODE: string;
+	export const VSCODE_GIT_IPC_AUTH_TOKEN: string;
 	export const VSCODE_GIT_IPC_HANDLE: string;
 	export const VSCODE_INJECTION: string;
-	export const VSCODE_PYTHON_AUTOACTIVATE_GUARD: string;
 	export const windir: string;
 	export const __PSLockDownPolicy: string;
 }
@@ -228,6 +227,7 @@ declare module '$env/dynamic/private' {
 		CommonProgramW6432: string;
 		COMPUTERNAME: string;
 		ComSpec: string;
+		CURSOR_TRACE_ID: string;
 		DriverData: string;
 		EDITOR: string;
 		GIT_ASKPASS: string;
@@ -281,8 +281,6 @@ declare module '$env/dynamic/private' {
 		PT8HOME: string;
 		PUBLIC: string;
 		PYDEVD_DISABLE_FILE_VALIDATION: string;
-		PYTHONSTARTUP: string;
-		PYTHON_BASIC_REPL: string;
 		SESSIONNAME: string;
 		STM32CubeMX_PATH: string;
 		SystemDrive: string;
@@ -301,9 +299,9 @@ declare module '$env/dynamic/private' {
 		VSCODE_GIT_ASKPASS_EXTRA_ARGS: string;
 		VSCODE_GIT_ASKPASS_MAIN: string;
 		VSCODE_GIT_ASKPASS_NODE: string;
+		VSCODE_GIT_IPC_AUTH_TOKEN: string;
 		VSCODE_GIT_IPC_HANDLE: string;
 		VSCODE_INJECTION: string;
-		VSCODE_PYTHON_AUTOACTIVATE_GUARD: string;
 		windir: string;
 		__PSLockDownPolicy: string;
 		[key: `PUBLIC_${string}`]: undefined;

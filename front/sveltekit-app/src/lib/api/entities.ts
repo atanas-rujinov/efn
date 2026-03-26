@@ -62,11 +62,19 @@ export const carsApi = {
 
 export interface DriveRequest {
 	id: number;
-	user_id: number;
-	driver_id?: number;
-	pickup_location: string;
-	dropoff_location: string;
-	status?: string;
+	created_at?: string;
+	description: string;
+	start_address: string;
+	start_lat?: number;
+	start_lon?: number;
+	dest_address: string;
+	dest_lat?: number;
+	dest_lon?: number;
+	is_completed: boolean;
+	is_accepted?: boolean | null;
+	driver: number | null;
+	disabled?: number;
+	disabled_rel?: DisabledUser;
 	[key: string]: unknown;
 }
 
@@ -82,11 +90,18 @@ export const driveRequestsApi = {
 
 export interface ShopRequest {
 	id: number;
-	user_id: number;
-	driver_id?: number;
-	shop_name: string;
-	items?: string;
-	status?: string;
+	created_at?: string;
+	description: string;
+	start_address: string;
+	start_lat?: number;
+	start_lon?: number;
+	dest_address: string;
+	dest_lat?: number;
+	dest_lon?: number;
+	is_completed: boolean;
+	driver: number | null;
+	disabled?: number;
+	disabled_rel?: DisabledUser;
 	[key: string]: unknown;
 }
 
@@ -110,10 +125,30 @@ export interface Review {
 	[key: string]: unknown;
 }
 
+export interface ReviewWithDriverName extends Review {
+	driver_name: string;
+}
+
+export interface DriverStats {
+	driver_id: number;
+	driver_name: string;
+	average_rating: number;
+	total_reviews: number;
+	recent_reviews: ReviewWithDriverName[];
+	group_ratings: {
+		label: string;
+		average_rating: number;
+		total_reviews: number;
+	}[];
+}
+
 export const reviewsApi = {
 	list: () => api.get<Review[]>('/reviews/'),
 	get: (id: number) => api.get<Review>(`/reviews/${id}`),
 	getByDriver: (driverId: number) => api.get<Review[]>(`/reviews/by-driver/${driverId}`),
+	getDriverStats: (driverId: number, limit: number = 10) =>
+		api.get<DriverStats>(`/reviews/driver/${driverId}?limit=${limit}`),
+	getMyReviews: () => api.get<ReviewWithDriverName[]>('/reviews/my-reviews'),
 	create: (data: Partial<Review>) => api.post<Review>('/reviews/', data),
 	update: (id: number, data: Partial<Review>) => api.patch<Review>(`/reviews/${id}`, data),
 	delete: (id: number) => api.delete<void>(`/reviews/${id}`)

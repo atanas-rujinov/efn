@@ -1,6 +1,7 @@
 {
 	"/": [],
 	"/(app)/dashboard": [],
+	"/(app)/helper/[driverId]/reviews": [],
 	"/login": [],
 	"/(app)/requests/new": [],
 	"/reviews": [],
