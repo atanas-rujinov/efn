@@ -10,16 +10,13 @@ class DriverBase(BaseModel):
     name: str
     password: str
 
-
 class DriverCreate(DriverBase):
     pass
-
 
 class DriverUpdate(BaseModel):
     email: Optional[str] = None
     name: Optional[str] = None
     password: Optional[str] = None
-
 
 class DriverOut(BaseModel):
     id: int
@@ -38,17 +35,14 @@ class DisabledBase(BaseModel):
     password: str
     disability: str
 
-
 class DisabledCreate(DisabledBase):
     pass
-
 
 class DisabledUpdate(BaseModel):
     email: Optional[str] = None
     name: Optional[str] = None
     password: Optional[str] = None
     disability: Optional[str] = None
-
 
 class DisabledOut(BaseModel):
     id: int
@@ -68,10 +62,8 @@ class CarBase(BaseModel):
     plate: str
     driver: int
 
-
 class CarCreate(CarBase):
     pass
-
 
 class CarUpdate(BaseModel):
     model: Optional[str] = None
@@ -79,10 +71,8 @@ class CarUpdate(BaseModel):
     plate: Optional[str] = None
     driver: Optional[int] = None
 
-
 class CarOut(BaseModel):
     id: int
-    created_at: datetime
     model: str
     color: str
     plate: str
@@ -91,7 +81,7 @@ class CarOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
-# ── DriveRequest ─────────────────────────────────────────────────────────────
+# ── Drive Request ────────────────────────────────────────────────────────────
 
 class DriveRequestBase(BaseModel):
     description: str
@@ -101,14 +91,14 @@ class DriveRequestBase(BaseModel):
     dest_address: str
     dest_lat: float
     dest_lon: float
-    is_completed: bool
-    driver: int
-    disabled: int
-
+    is_completed: bool = False
+    
+    # FIX: These are now Optional so the frontend isn't forced to send them
+    driver: Optional[int] = None
+    disabled: Optional[int] = None
 
 class DriveRequestCreate(DriveRequestBase):
     pass
-
 
 class DriveRequestUpdate(BaseModel):
     description: Optional[str] = None
@@ -122,7 +112,6 @@ class DriveRequestUpdate(BaseModel):
     driver: Optional[int] = None
     disabled: Optional[int] = None
 
-
 class DriveRequestOut(BaseModel):
     id: int
     created_at: datetime
@@ -134,13 +123,15 @@ class DriveRequestOut(BaseModel):
     dest_lat: float
     dest_lon: float
     is_completed: bool
-    driver: int
+    
+    # FIX: Allow driver out to be None/null in JSON 
+    driver: Optional[int] = None
     disabled: int
 
     model_config = {"from_attributes": True}
 
 
-# ── ShopRequest ──────────────────────────────────────────────────────────────
+# ── Shop Request ─────────────────────────────────────────────────────────────
 
 class ShopRequestBase(BaseModel):
     description: str
@@ -150,14 +141,14 @@ class ShopRequestBase(BaseModel):
     dest_address: str
     dest_lat: float
     dest_lon: float
-    is_completed: bool
-    driver: int
-    disabled: int
-
+    is_completed: bool = False
+    
+    # FIX: Same optional handling as DriveRequests
+    driver: Optional[int] = None
+    disabled: Optional[int] = None
 
 class ShopRequestCreate(ShopRequestBase):
     pass
-
 
 class ShopRequestUpdate(BaseModel):
     description: Optional[str] = None
@@ -171,7 +162,6 @@ class ShopRequestUpdate(BaseModel):
     driver: Optional[int] = None
     disabled: Optional[int] = None
 
-
 class ShopRequestOut(BaseModel):
     id: int
     created_at: datetime
@@ -183,7 +173,7 @@ class ShopRequestOut(BaseModel):
     dest_lat: float
     dest_lon: float
     is_completed: bool
-    driver: int
+    driver: Optional[int] = None
     disabled: int
 
     model_config = {"from_attributes": True}
@@ -197,10 +187,8 @@ class ReviewBase(BaseModel):
     driver: int
     author: int
 
-
 class ReviewCreate(ReviewBase):
     pass
-
 
 class ReviewUpdate(BaseModel):
     rating: Optional[int] = None
@@ -208,12 +196,11 @@ class ReviewUpdate(BaseModel):
     driver: Optional[int] = None
     author: Optional[int] = None
 
-
 class ReviewOut(BaseModel):
     id: int
     created_at: datetime
     rating: int
-    comment: Optional[str]
+    comment: Optional[str] = None
     driver: int
     author: int
 

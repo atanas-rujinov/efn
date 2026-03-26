@@ -5,6 +5,9 @@ from typing import List
 from database import get_db
 import models, schemas
 
+# FIX: Import the auth dependency
+from auth import require_disabled 
+
 router = APIRouter(prefix="/drive-requests", tags=["Drive Requests"])
 
 
@@ -22,8 +25,19 @@ def get_one(id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/", response_model=schemas.DriveRequestOut, status_code=201)
-def create(payload: schemas.DriveRequestCreate, db: Session = Depends(get_db)):
-    record = models.DriveRequest(**payload.model_dump())
+def create(
+    payload: schemas.DriveRequestCreate, 
+    db: Session = Depends(get_db),
+    # FIX: Require authentication and get the logged in user
+    current_user = Depends(require_disabled) 
+):
+    # FIX: Convert payload to dict and inject the author's ID automatically
+    data = payload.model_dump()
+    data["disabled"] = current_user.id 
+    
+    # Driver will naturally be None since it was left out of the frontend payload
+
+    record = models.DriveRequest(**data)
     db.add(record)
     db.commit()
     db.refresh(record)
