@@ -9,6 +9,7 @@
 	let role: Role = 'disabled';
 	let name = '';
 	let email = '';
+	let phone = '';
 	let password = '';
 	let confirmPassword = '';
 	let disability = '';
@@ -36,12 +37,11 @@
 
 	function selectRole(r: Role) {
 		role = r;
-		// reset role-specific fields
 		disability = '';
 	}
 
 	async function handleSignup() {
-		if (!name || !email || !password || !confirmPassword) {
+		if (!name || !email || !phone || !password || !confirmPassword) {
 			notifications.error('Please fill in all fields.');
 			return;
 		}
@@ -62,8 +62,8 @@
 		try {
 			const payload =
 				role === 'driver'
-					? { name, email, password, role: 'driver' as const }
-					: { name, email, password, role: 'disabled' as const, disability };
+					? { name, email, phone, password, role: 'driver' as const }
+					: { name, email, phone, password, role: 'disabled' as const, disability };
 
 			const res = await authApi.signup(payload);
 			auth.setToken(res.access_token);
@@ -85,7 +85,6 @@
 <svelte:head><title>Create account — Fleet</title></svelte:head>
 
 <div class="shell">
-	<!-- Brand panel -->
 	<aside class="brand">
 		<div class="brand__inner">
 			<div class="logo">
@@ -123,7 +122,6 @@
 		</div>
 	</aside>
 
-	<!-- Form panel -->
 	<main class="form-panel">
 		<div class="form-panel__inner">
 			<header>
@@ -131,25 +129,14 @@
 				<h2 class="title">Create your account</h2>
 			</header>
 
-			<!-- Role picker -->
 			<div class="role-picker">
-				<button
-					type="button"
-					class="role-btn"
-					class:active={role === 'disabled'}
-					on:click={() => selectRole('disabled')}
-				>
+				<button type="button" class="role-btn" class:active={role === 'disabled'} on:click={() => selectRole('disabled')}>
 					<span class="role-btn__icon">♿</span>
 					<span class="role-btn__label">I need help</span>
 					<span class="role-btn__sub">Disabled person</span>
 					{#if role === 'disabled'}<span class="role-btn__check">✓</span>{/if}
 				</button>
-				<button
-					type="button"
-					class="role-btn"
-					class:active={role === 'driver'}
-					on:click={() => selectRole('driver')}
-				>
+				<button type="button" class="role-btn" class:active={role === 'driver'} on:click={() => selectRole('driver')}>
 					<span class="role-btn__icon">🚗</span>
 					<span class="role-btn__label">I want to help</span>
 					<span class="role-btn__sub">Volunteer driver</span>
@@ -158,7 +145,6 @@
 			</div>
 
 			<div class="card">
-				<!-- Name + Email row -->
 				<div class="row-2">
 					<div class="field">
 						<label for="name">Full name</label>
@@ -169,8 +155,7 @@
 									<circle cx="12" cy="7" r="4"/>
 								</svg>
 							</span>
-							<input id="name" type="text" placeholder="Jane Smith"
-								bind:value={name} autocomplete="name" disabled={loading} />
+							<input id="name" type="text" placeholder="Jane Smith" bind:value={name} autocomplete="name" disabled={loading} />
 						</div>
 					</div>
 					<div class="field">
@@ -182,13 +167,23 @@
 									<polyline points="22,6 12,13 2,6"/>
 								</svg>
 							</span>
-							<input id="email" type="email" placeholder="jane@example.com"
-								bind:value={email} autocomplete="email" disabled={loading} />
+							<input id="email" type="email" placeholder="jane@example.com" bind:value={email} autocomplete="email" disabled={loading} />
 						</div>
 					</div>
 				</div>
 
-				<!-- Disability field (disabled role only) -->
+				<div class="field">
+					<label for="phone">Phone number</label>
+					<div class="input-wrap">
+						<span class="icon">
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+								<path d="M22 16.92V19a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4 2h2.09a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+							</svg>
+						</span>
+						<input id="phone" type="tel" placeholder="+359 88 123 4567" bind:value={phone} autocomplete="tel" disabled={loading} />
+					</div>
+				</div>
+
 				{#if role === 'disabled'}
 					<div class="field">
 						<label for="disability">
@@ -203,95 +198,93 @@
 									<line x1="12" y1="16" x2="12.01" y2="16"/>
 								</svg>
 							</span>
-							<input id="disability" type="text"
-								placeholder="e.g. visual impairment, mobility difficulty…"
-								bind:value={disability} disabled={loading} />
+							<input id="disability" type="text" placeholder="e.g. visual impairment, mobility difficulty…" bind:value={disability} disabled={loading} />
 						</div>
 						<p class="field-hint">This helps drivers prepare and assist you better.</p>
 					</div>
 				{/if}
 
-				<!-- Password -->
-				<div class="field">
-					<label for="password">
-						Password
-						{#if strength.label}
-							<span class="strength-label" style="color:{strength.color}">{strength.label}</span>
-						{/if}
-					</label>
-					<div class="input-wrap">
-						<span class="icon">
-							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-								<rect x="3" y="11" width="18" height="11" rx="2"/>
-								<path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-							</svg>
-						</span>
-						{#if showPassword}
-							<input id="password" type="text" placeholder="Min. 8 characters"
-								bind:value={password} autocomplete="new-password" disabled={loading} />
-						{:else}
-							<input id="password" type="password" placeholder="Min. 8 characters"
-								bind:value={password} autocomplete="new-password" disabled={loading} />
-						{/if}
-						<button type="button" class="eye-btn"
-							on:click={() => (showPassword = !showPassword)} aria-label="Toggle password">
-							{#if showPassword}
-								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-									<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-									<line x1="1" y1="1" x2="23" y2="23"/>
-								</svg>
-							{:else}
-								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-									<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-									<circle cx="12" cy="12" r="3"/>
-								</svg>
-							{/if}
-						</button>
-					</div>
-					{#if password}
-						<div class="strength-bar">
-							{#each Array(4) as _, i}
-								<div class="strength-bar__seg"
-									style={i < strength.level ? `background:${strength.color}` : ''} />
-							{/each}
-						</div>
-					{/if}
-				</div>
-
-				<!-- Confirm password -->
-				<div class="field">
-					<label for="confirm">Confirm password</label>
-					<div class="input-wrap">
-						<span class="icon">
-							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-								<polyline points="20 6 9 17 4 12"/>
-							</svg>
-						</span>
-						{#if showPassword}
-							<input id="confirm" type="text" placeholder="Repeat password"
-								bind:value={confirmPassword} autocomplete="new-password"
-								disabled={loading} class:error={!passwordsMatch} />
-						{:else}
-							<input id="confirm" type="password" placeholder="Repeat password"
-								bind:value={confirmPassword} autocomplete="new-password"
-								disabled={loading} class:error={!passwordsMatch} />
-						{/if}
-					</div>
-					{#if !passwordsMatch}<p class="field-error">Passwords don't match</p>{/if}
-				</div>
-
-				<button class="btn-primary" on:click={handleSignup}
-					disabled={loading || !passwordsMatch}>
-					{#if loading}
-						<span class="spinner" />Creating account…
-					{:else}
-						{role === 'driver' ? 'Join as a driver' : 'Create my account'}
-						<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-							<line x1="5" y1="12" x2="19" y2="12"/>
-							<polyline points="12 5 19 12 12 19"/>
-						</svg>
-					{/if}
-				</button>
+								<!-- Password -->
+								<div class="field">
+									<label for="password">
+										Password
+										{#if strength.label}
+											<span class="strength-label" style="color:{strength.color}">{strength.label}</span>
+										{/if}
+									</label>
+									<div class="input-wrap">
+										<span class="icon">
+											<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+												<rect x="3" y="11" width="18" height="11" rx="2"/>
+												<path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+											</svg>
+										</span>
+										{#if showPassword}
+											<input id="password" type="text" placeholder="Min. 8 characters"
+												bind:value={password} autocomplete="new-password" disabled={loading} />
+										{:else}
+											<input id="password" type="password" placeholder="Min. 8 characters"
+												bind:value={password} autocomplete="new-password" disabled={loading} />
+										{/if}
+										<button type="button" class="eye-btn"
+											on:click={() => (showPassword = !showPassword)} aria-label="Toggle password">
+											{#if showPassword}
+												<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+													<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+													<line x1="1" y1="1" x2="23" y2="23"/>
+												</svg>
+											{:else}
+												<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+													<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+													<circle cx="12" cy="12" r="3"/>
+												</svg>
+											{/if}
+										</button>
+									</div>
+									{#if password}
+										<div class="strength-bar">
+											{#each Array(4) as _, i}
+												<div class="strength-bar__seg"
+													style={i < strength.level ? `background:${strength.color}` : ''} />
+											{/each}
+										</div>
+									{/if}
+								</div>
+				
+								<!-- Confirm password -->
+								<div class="field">
+									<label for="confirm">Confirm password</label>
+									<div class="input-wrap">
+										<span class="icon">
+											<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+												<polyline points="20 6 9 17 4 12"/>
+											</svg>
+										</span>
+										{#if showPassword}
+											<input id="confirm" type="text" placeholder="Repeat password"
+												bind:value={confirmPassword} autocomplete="new-password"
+												disabled={loading} class:error={!passwordsMatch} />
+										{:else}
+											<input id="confirm" type="password" placeholder="Repeat password"
+												bind:value={confirmPassword} autocomplete="new-password"
+												disabled={loading} class:error={!passwordsMatch} />
+										{/if}
+									</div>
+									{#if !passwordsMatch}<p class="field-error">Passwords don't match</p>{/if}
+								</div>
+				
+								<button class="btn-primary" on:click={handleSignup}
+									disabled={loading || !passwordsMatch}>
+									{#if loading}
+										<span class="spinner" />Creating account…
+									{:else}
+										{role === 'driver' ? 'Join as a driver' : 'Create my account'}
+										<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+											<line x1="5" y1="12" x2="19" y2="12"/>
+											<polyline points="12 5 19 12 12 19"/>
+										</svg>
+									{/if}
+								</button>
 			</div>
 
 			<p class="switch">Already have an account? <a href="/login">Sign in →</a></p>
