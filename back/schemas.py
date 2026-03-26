@@ -214,3 +214,47 @@ class ReviewOut(BaseModel):
     author: int
 
     model_config = {"from_attributes": True}
+
+# ── Other Request ───────────────────────────────────────────────────────────
+
+class OtherRequestBase(BaseModel):
+    description: str
+    dest_address: str
+    dest_lat: float
+    dest_lon: float
+    is_completed: bool = False
+    is_accepted: Optional[bool] = None
+
+    driver: Optional[int] = None
+    disabled: Optional[int] = None
+
+
+class OtherRequestCreate(OtherRequestBase):
+    pass
+
+
+class OtherRequestUpdate(BaseModel):
+    description: Optional[str] = None
+    dest_address: Optional[str] = None
+    dest_lat: Optional[float] = None
+    dest_lon: Optional[float] = None
+    is_completed: Optional[bool] = None
+    is_accepted: Optional[bool] = None
+    driver: Optional[int] = None
+    disabled: Optional[int] = None
+
+
+class OtherRequestOut(BaseModel):
+    id: int
+    created_at: datetime
+    description: str
+    dest_address: str
+    dest_lat: float
+    dest_lon: float
+    is_completed: bool
+    is_accepted: Optional[bool] = None
+
+    driver: Optional[DriverOut] = Field(None, alias="driver_rel")
+    disabled: DisabledOut = Field(alias="disabled_rel")
+
+    model_config = {"from_attributes": True, "populate_by_name": True}

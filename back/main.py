@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-import drivers, disabled, cars, drive_requests, shop_requests, reviews
+import drivers, disabled, cars, drive_requests, shop_requests, reviews, other_requests
 import auth_router
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -24,6 +24,7 @@ app.include_router(cars.router)
 app.include_router(drive_requests.router)
 app.include_router(shop_requests.router)
 app.include_router(reviews.router)
+app.include_router(other_requests.router)
 
 
 @app.get("/", tags=["Health"])

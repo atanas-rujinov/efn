@@ -16,6 +16,7 @@ class Driver(Base):
     cars = relationship("Car", back_populates="driver_rel")
     drive_requests = relationship("DriveRequest", back_populates="driver_rel")
     shop_requests = relationship("ShopRequest", back_populates="driver_rel")
+    other_requests = relationship("OtherRequest", back_populates="driver_rel")
     reviews = relationship("Review", back_populates="driver_rel")
 
 
@@ -32,6 +33,7 @@ class Disabled(Base):
 
     drive_requests = relationship("DriveRequest", back_populates="disabled_rel")
     shop_requests = relationship("ShopRequest", back_populates="disabled_rel")
+    other_requests = relationship("OtherRequest", back_populates="disabled_rel")
     reviews = relationship("Review", back_populates="author_rel")
 
 
@@ -101,3 +103,24 @@ class Review(Base):
 
     driver_rel = relationship("Driver", back_populates="reviews")
     author_rel = relationship("Disabled", back_populates="reviews")
+
+class OtherRequest(Base):
+    __tablename__ = "other_requests"
+
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
+
+    description = Column(Text, nullable=False)
+
+    dest_address = Column(Text, nullable=False)
+    dest_lat = Column(Double, nullable=False)
+    dest_lon = Column(Double, nullable=False)
+
+    is_completed = Column(Boolean, nullable=False)
+    is_accepted = Column(Boolean, nullable=True)
+
+    driver = Column(BigInteger, ForeignKey("driver.id"), nullable=True)
+    disabled = Column(BigInteger, ForeignKey("disabled.id"), nullable=False)
+
+    driver_rel = relationship("Driver", back_populates="other_requests")
+    disabled_rel = relationship("Disabled", back_populates="other_requests")
