@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 from datetime import datetime
 
@@ -182,7 +182,7 @@ class ShopRequestOut(BaseModel):
 # ── Review ───────────────────────────────────────────────────────────────────
 
 class ReviewBase(BaseModel):
-    rating: int
+    rating: int = Field(..., ge=1, le=5)  # Rating must be 1-5 stars
     comment: Optional[str] = None
     driver: int
     author: int
@@ -191,7 +191,7 @@ class ReviewCreate(ReviewBase):
     pass
 
 class ReviewUpdate(BaseModel):
-    rating: Optional[int] = None
+    rating: Optional[int] = Field(None, ge=1, le=5)
     comment: Optional[str] = None
     driver: Optional[int] = None
     author: Optional[int] = None

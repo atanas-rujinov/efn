@@ -82,6 +82,18 @@
 						<polyline points="12 5 19 12 12 19"/>
 					</svg>
 				</a>
+
+				<a href="/reviews" class="action-card">
+					<span class="action-card__icon">⭐</span>
+					<div>
+						<strong>Write a review</strong>
+						<span>Rate your experience</span>
+					</div>
+					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+						<line x1="5" y1="12" x2="19" y2="12"/>
+						<polyline points="12 5 19 12 12 19"/>
+					</svg>
+				</a>
 			</div>
 
 		{:else if $user.role === 'driver'}

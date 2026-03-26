@@ -3,5 +3,6 @@
 	"/(app)/dashboard": [],
 	"/login": [],
 	"/(app)/requests/new": [],
+	"/reviews": [],
 	"/signup": []
 }

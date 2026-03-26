@@ -102,16 +102,18 @@ export const shopRequestsApi = {
 
 export interface Review {
 	id: number;
-	user_id: number;
-	driver_id: number;
+	created_at: string;
 	rating: number;
 	comment?: string;
+	driver: number;
+	author: number;
 	[key: string]: unknown;
 }
 
 export const reviewsApi = {
 	list: () => api.get<Review[]>('/reviews/'),
 	get: (id: number) => api.get<Review>(`/reviews/${id}`),
+	getByDriver: (driverId: number) => api.get<Review[]>(`/reviews/by-driver/${driverId}`),
 	create: (data: Partial<Review>) => api.post<Review>('/reviews/', data),
 	update: (id: number, data: Partial<Review>) => api.patch<Review>(`/reviews/${id}`, data),
 	delete: (id: number) => api.delete<void>(`/reviews/${id}`)
