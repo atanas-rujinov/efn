@@ -11,6 +11,7 @@ class Driver(Base):
     email = Column(Text, unique=True, nullable=False)
     name = Column(Text, nullable=False)
     password = Column(Text, nullable=False)
+    phone = Column(Text, nullable=False)
 
     cars = relationship("Car", back_populates="driver_rel")
     drive_requests = relationship("DriveRequest", back_populates="driver_rel")
@@ -27,6 +28,7 @@ class Disabled(Base):
     name = Column(Text, nullable=False)
     password = Column(Text, nullable=False)
     disability = Column(Text, nullable=False)
+    phone = Column(Text, nullable=False)
 
     drive_requests = relationship("DriveRequest", back_populates="disabled_rel")
     shop_requests = relationship("ShopRequest", back_populates="disabled_rel")
@@ -59,7 +61,7 @@ class DriveRequest(Base):
     dest_lat = Column(Double, nullable=False)
     dest_lon = Column(Double, nullable=False)
     is_completed = Column(Boolean, nullable=False)
-    driver = Column(BigInteger, ForeignKey("driver.id"), nullable=False)
+    driver = Column(BigInteger, ForeignKey("driver.id"), nullable=True)   # nullable: no driver assigned yet
     disabled = Column(BigInteger, ForeignKey("disabled.id"), nullable=False)
 
     driver_rel = relationship("Driver", back_populates="drive_requests")
@@ -79,7 +81,7 @@ class ShopRequest(Base):
     dest_lat = Column(Double, nullable=False)
     dest_lon = Column(Double, nullable=False)
     is_completed = Column(Boolean, nullable=False)
-    driver = Column(BigInteger, ForeignKey("driver.id"), nullable=False)
+    driver = Column(BigInteger, ForeignKey("driver.id"), nullable=True)   # nullable: no driver assigned yet
     disabled = Column(BigInteger, ForeignKey("disabled.id"), nullable=False)
 
     driver_rel = relationship("Driver", back_populates="shop_requests")

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
 
@@ -9,6 +9,7 @@ class DriverBase(BaseModel):
     email: str
     name: str
     password: str
+    phone: str
 
 class DriverCreate(DriverBase):
     pass
@@ -17,12 +18,14 @@ class DriverUpdate(BaseModel):
     email: Optional[str] = None
     name: Optional[str] = None
     password: Optional[str] = None
+    phone: Optional[str] = None
 
 class DriverOut(BaseModel):
     id: int
     created_at: datetime
     email: str
     name: str
+    phone: Optional[str] = None
 
     model_config = {"from_attributes": True}
 
@@ -34,6 +37,7 @@ class DisabledBase(BaseModel):
     name: str
     password: str
     disability: str
+    phone: str
 
 class DisabledCreate(DisabledBase):
     pass
@@ -43,6 +47,7 @@ class DisabledUpdate(BaseModel):
     name: Optional[str] = None
     password: Optional[str] = None
     disability: Optional[str] = None
+    phone: Optional[str] = None
 
 class DisabledOut(BaseModel):
     id: int
@@ -50,6 +55,7 @@ class DisabledOut(BaseModel):
     email: str
     name: str
     disability: str
+    phone: Optional[str] = None
 
     model_config = {"from_attributes": True}
 
@@ -92,8 +98,7 @@ class DriveRequestBase(BaseModel):
     dest_lat: float
     dest_lon: float
     is_completed: bool = False
-    
-    # FIX: These are now Optional so the frontend isn't forced to send them
+
     driver: Optional[int] = None
     disabled: Optional[int] = None
 
@@ -123,12 +128,10 @@ class DriveRequestOut(BaseModel):
     dest_lat: float
     dest_lon: float
     is_completed: bool
-    
-    # FIX: Allow driver out to be None/null in JSON 
     driver: Optional[int] = None
-    disabled: int
+    disabled: DisabledOut = Field(alias="disabled_rel")
 
-    model_config = {"from_attributes": True}
+    model_config = {"from_attributes": True, "populate_by_name": True}
 
 
 # ── Shop Request ─────────────────────────────────────────────────────────────
@@ -142,8 +145,7 @@ class ShopRequestBase(BaseModel):
     dest_lat: float
     dest_lon: float
     is_completed: bool = False
-    
-    # FIX: Same optional handling as DriveRequests
+
     driver: Optional[int] = None
     disabled: Optional[int] = None
 
@@ -174,9 +176,9 @@ class ShopRequestOut(BaseModel):
     dest_lon: float
     is_completed: bool
     driver: Optional[int] = None
-    disabled: int
+    disabled: DisabledOut = Field(alias="disabled_rel")
 
-    model_config = {"from_attributes": True}
+    model_config = {"from_attributes": True, "populate_by_name": True}
 
 
 # ── Review ───────────────────────────────────────────────────────────────────

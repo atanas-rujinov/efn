@@ -95,6 +95,14 @@
 				<div class="requests-list">
 					{#each requests as request}
 						<div class="request-card">
+							<div class="requester-info">
+								<span class="requester-avatar">{request.disabled_rel.name.charAt(0).toUpperCase()}</span>
+								<div>
+								    <span class="requester-name">{request.disabled_rel.name}</span>
+								    <span class="requester-disability">{request.disabled_rel.disability}</span>
+								</div>
+							</div>
+
 							<div class="request-route">
 								<div class="location">
 									<span class="dot dot-start"></span>
@@ -171,6 +179,43 @@
 	.action-card div span { font-size: 0.875rem; color: var(--text-secondary); }
 	.action-card svg { color: var(--text-secondary); transition: transform 0.2s, color 0.2s; }
 	.action-card:hover svg { transform: translateX(4px); color: var(--text-primary); }
+
+	/* ── REQUESTER INFO ───────────────────────────────────────────────────── */
+	.requester-info {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		padding-bottom: 1rem;
+		border-bottom: 1px solid var(--border);
+	}
+	.requester-avatar {
+		width: 2.25rem;
+		height: 2.25rem;
+		border-radius: 50%;
+		background: var(--accent, #000);
+		color: #fff;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-weight: 700;
+		font-size: 1rem;
+		flex-shrink: 0;
+	}
+	.requester-info div {
+		display: flex;
+		flex-direction: column;
+		gap: 0.15rem;
+	}
+	.requester-name {
+		font-weight: 600;
+		color: var(--text-primary);
+		font-size: 0.95rem;
+	}
+	.requester-disability {
+		font-size: 0.8rem;
+		color: var(--text-secondary);
+		text-transform: capitalize;
+	}
 
 	/* ── DRIVER REQUESTS LIST ─────────────────────────────────────────────── */
 	.requests-list {
