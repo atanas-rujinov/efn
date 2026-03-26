@@ -1,11 +1,20 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { driveRequestsApi } from '$lib/api/entities';
+	import { driveRequestsApi, otherRequestsApi } from '$lib/api/entities';
 	import { notifications } from '$lib/stores/notifications';
 	import { ApiError } from '$lib/api/client';
 
-	// ── Form state ────────────────────────────────────────
+	// ── Tab state ─────────────────────────────────────────
+	let activeTab: 'ride' | 'other' = 'ride';
+
+	function switchTab(tab: 'ride' | 'other') {
+		activeTab = tab;
+		// Clear pin mode on tab switch
+		pinMode = null;
+	}
+
+	// ── Ride form state ───────────────────────────────────
 	let description = '';
 
 	let startAddress = '';
@@ -15,6 +24,16 @@
 	let destAddress = '';
 	let destLat: number | null = null;
 	let destLon: number | null = null;
+
+	// ── Other request form state ──────────────────────────
+	let otherDescription = '';
+	let otherDestAddress = '';
+	let otherDestLat: number | null = null;
+	let otherDestLon: number | null = null;
+	let otherDestQuery = '';
+	let otherDestResults: NominatimResult[] = [];
+	let otherDestSearching = false;
+	let otherDestDebounce: ReturnType<typeof setTimeout>;
 
 	let loading = false;
 
@@ -61,6 +80,13 @@
 		}
 	}
 
+	function searchOtherDest(query: string) {
+		clearTimeout(otherDestDebounce);
+		if (!query.trim()) { otherDestResults = []; return; }
+		otherDestSearching = true;
+		otherDestDebounce = setTimeout(() => doSearchOtherDest(query), 400);
+	}
+
 	async function doSearch(query: string, which: 'start' | 'dest') {
 		try {
 			const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`;
@@ -74,28 +100,49 @@
 		}
 	}
 
+	async function doSearchOtherDest(query: string) {
+		try {
+			const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`;
+			const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+			otherDestResults = await res.json();
+		} catch {}
+		otherDestSearching = false;
+	}
+
 	function pickResult(result: NominatimResult, which: 'start' | 'dest') {
 		const lat = parseFloat(result.lat);
 		const lon = parseFloat(result.lon);
-		// shorten display name to first two parts
 		const short = result.display_name.split(',').slice(0, 2).join(',').trim();
 
 		if (which === 'start') {
-			startAddress = short;
-			startQuery = short;
-			startLat = lat;
-			startLon = lon;
+			startAddress = short; startQuery = short;
+			startLat = lat; startLon = lon;
 			startResults = [];
 			placeMarker('start', lat, lon);
 		} else {
-			destAddress = short;
-			destQuery = short;
-			destLat = lat;
-			destLon = lon;
+			destAddress = short; destQuery = short;
+			destLat = lat; destLon = lon;
 			destResults = [];
 			placeMarker('dest', lat, lon);
 		}
 		fitBounds();
+	}
+
+	function pickOtherDest(result: NominatimResult) {
+		const lat = parseFloat(result.lat);
+		const lon = parseFloat(result.lon);
+		const short = result.display_name.split(',').slice(0, 2).join(',').trim();
+		otherDestAddress = short; otherDestQuery = short;
+		otherDestLat = lat; otherDestLon = lon;
+		otherDestResults = [];
+		// reuse destMarker slot for other tab
+		destMarker?.remove();
+		destMarker = L.marker([lat, lon], { icon: makeIcon('#ff4757') })
+			.addTo(map)
+			.bindTooltip('Destination', { permanent: false });
+		startMarker?.remove(); startMarker = null;
+		routeLine?.remove(); routeLine = null;
+		map.setView([lat, lon], 14);
 	}
 
 	// ── Leaflet helpers ───────────────────────────────────
@@ -167,17 +214,15 @@
 
 	// ── Mount map ─────────────────────────────────────────
 	onMount(async () => {
-		// dynamically load Leaflet from CDN
 		await loadLeaflet();
 
-		map = L.map(mapEl, { zoomControl: true }).setView([42.698, 23.322], 12); // Sofia default
+		map = L.map(mapEl, { zoomControl: true }).setView([42.698, 23.322], 12);
 
 		L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 			attribution: '© OpenStreetMap contributors',
 			maxZoom: 19,
 		}).addTo(map);
 
-		// style the attribution to fit dark theme
 		const attr = mapEl.querySelector('.leaflet-control-attribution') as HTMLElement;
 		if (attr) attr.style.cssText = 'background:rgba(13,16,24,0.8);color:#7a8099;font-size:10px;';
 
@@ -186,14 +231,26 @@
 			const { lat, lng } = e.latlng;
 			const address = await reverseGeocode(lat, lng);
 
-			if (pinMode === 'start') {
-				startLat = lat; startLon = lng;
-				startAddress = address; startQuery = address;
-				placeMarker('start', lat, lng);
+			if (activeTab === 'ride') {
+				if (pinMode === 'start') {
+					startLat = lat; startLon = lng;
+					startAddress = address; startQuery = address;
+					placeMarker('start', lat, lng);
+				} else {
+					destLat = lat; destLon = lng;
+					destAddress = address; destQuery = address;
+					placeMarker('dest', lat, lng);
+				}
 			} else {
-				destLat = lat; destLon = lng;
-				destAddress = address; destQuery = address;
-				placeMarker('dest', lat, lng);
+				// other tab only has a destination pin
+				otherDestLat = lat; otherDestLon = lng;
+				otherDestAddress = address; otherDestQuery = address;
+				destMarker?.remove();
+				destMarker = L.marker([lat, lng], { icon: makeIcon('#ff4757') })
+					.addTo(map)
+					.bindTooltip('Destination', { permanent: false });
+				startMarker?.remove(); startMarker = null;
+				routeLine?.remove(); routeLine = null;
 			}
 			pinMode = null;
 			fitBounds();
@@ -218,7 +275,7 @@
 		});
 	}
 
-	// ── Submit ────────────────────────────────────────────
+	// ── Submit: Ride ──────────────────────────────────────
 	async function handleSubmit() {
 		if (!startAddress || startLat === null || startLon === null) {
 			notifications.error('Please set a pickup location.');
@@ -250,9 +307,35 @@
 			loading = false;
 		}
 	}
+
+	// ── Submit: Other ─────────────────────────────────────
+	async function handleOtherSubmit() {
+		if (!otherDestAddress || otherDestLat === null || otherDestLon === null) {
+			notifications.error('Please set a destination.');
+			return;
+		}
+
+		loading = true;
+		try {
+			await otherRequestsApi.create({
+				description: otherDescription.trim() || undefined,
+				dest_address: otherDestAddress,
+				dest_lat: otherDestLat,
+				dest_lon: otherDestLon,
+				is_completed: false,
+			});
+			notifications.success('Request submitted!');
+			goto('/dashboard');
+		} catch (e) {
+			if (e instanceof ApiError) notifications.error(e.detail);
+			else notifications.error('Something went wrong. Please try again.');
+		} finally {
+			loading = false;
+		}
+	}
 </script>
 
-<svelte:head><title>Request a ride — Fleet</title></svelte:head>
+<svelte:head><title>New request — Fleet</title></svelte:head>
 
 <div class="page">
 	<!-- Top nav -->
@@ -276,183 +359,323 @@
 		<aside class="form-col">
 			<header class="form-header">
 				<p class="eyebrow">New request</p>
-				<h1 class="title">Request a ride</h1>
-				<p class="subtitle">Set your pickup and destination — a driver will be assigned shortly.</p>
+				<h1 class="title">What do you need?</h1>
+				<p class="subtitle">Choose the type of assistance and fill in the details below.</p>
 			</header>
 
-			<!-- Pickup -->
-			<section class="section">
-				<div class="section__head">
-					<span class="section__dot section__dot--start" />
-					<h2>Pickup location</h2>
-				</div>
-
-				<div class="address-field">
-					<div class="input-wrap">
-						<span class="icon">
-							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-								<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-							</svg>
-						</span>
-						<input
-							type="text"
-							placeholder="Search pickup address…"
-							bind:value={startQuery}
-							on:input={() => searchAddress(startQuery, 'start')}
-							disabled={loading}
-						/>
-						{#if startSearching}
-							<span class="searching-spinner" />
-						{/if}
-					</div>
-
-					{#if startResults.length > 0}
-						<ul class="results">
-							{#each startResults as r}
-								<li>
-									<button type="button" on:click={() => pickResult(r, 'start')}>
-										<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-											<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-											<circle cx="12" cy="10" r="3"/>
-										</svg>
-										{r.display_name}
-									</button>
-								</li>
-							{/each}
-						</ul>
-					{/if}
-
-					<button
-						type="button"
-						class="pin-btn"
-						class:active={pinMode === 'start'}
-						on:click={() => pinMode = pinMode === 'start' ? null : 'start'}
-					>
-						<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-							<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-							<circle cx="12" cy="10" r="3"/>
-						</svg>
-						{pinMode === 'start' ? 'Click the map to pin…' : 'Pin on map'}
-					</button>
-
-					{#if startAddress}
-						<p class="address-confirmed">
-							<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-								<polyline points="20 6 9 17 4 12"/>
-							</svg>
-							{startAddress}
-						</p>
-					{/if}
-				</div>
-			</section>
-
-			<!-- Destination -->
-			<section class="section">
-				<div class="section__head">
-					<span class="section__dot section__dot--dest" />
-					<h2>Destination</h2>
-				</div>
-
-				<div class="address-field">
-					<div class="input-wrap">
-						<span class="icon">
-							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-								<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-							</svg>
-						</span>
-						<input
-							type="text"
-							placeholder="Search destination address…"
-							bind:value={destQuery}
-							on:input={() => searchAddress(destQuery, 'dest')}
-							disabled={loading}
-						/>
-						{#if destSearching}
-							<span class="searching-spinner" />
-						{/if}
-					</div>
-
-					{#if destResults.length > 0}
-						<ul class="results">
-							{#each destResults as r}
-								<li>
-									<button type="button" on:click={() => pickResult(r, 'dest')}>
-										<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-											<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-											<circle cx="12" cy="10" r="3"/>
-										</svg>
-										{r.display_name}
-									</button>
-								</li>
-							{/each}
-						</ul>
-					{/if}
-
-					<button
-						type="button"
-						class="pin-btn"
-						class:active={pinMode === 'dest'}
-						on:click={() => pinMode = pinMode === 'dest' ? null : 'dest'}
-					>
-						<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-							<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-							<circle cx="12" cy="10" r="3"/>
-						</svg>
-						{pinMode === 'dest' ? 'Click the map to pin…' : 'Pin on map'}
-					</button>
-
-					{#if destAddress}
-						<p class="address-confirmed">
-							<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-								<polyline points="20 6 9 17 4 12"/>
-							</svg>
-							{destAddress}
-						</p>
-					{/if}
-				</div>
-			</section>
-
-			<!-- Notes -->
-			<section class="section">
-				<div class="section__head">
-					<span class="section__dot section__dot--notes" />
-					<h2>Notes <span class="optional">optional</span></h2>
-				</div>
-				<textarea
-					placeholder="Any special instructions for the driver — mobility aids, preferred route, etc."
-					bind:value={description}
-					rows="3"
-					disabled={loading}
-				/>
-			</section>
-
-			<!-- Map hint when pin mode active -->
-			{#if pinMode}
-				<div class="map-hint">
-					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+			<!-- ── Tab toggle ── -->
+			<div class="tabs" role="tablist">
+				<button
+					role="tab"
+					aria-selected={activeTab === 'ride'}
+					class="tab"
+					class:tab--active={activeTab === 'ride'}
+					on:click={() => switchTab('ride')}
+				>
+					<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 						<circle cx="12" cy="12" r="10"/>
-						<line x1="12" y1="8" x2="12" y2="12"/>
-						<line x1="12" y1="16" x2="12.01" y2="16"/>
+						<path d="M8 12h8M12 8l4 4-4 4"/>
 					</svg>
-					Click anywhere on the map to drop the {pinMode === 'start' ? 'pickup' : 'destination'} pin
-				</div>
-			{/if}
+					Ride
+				</button>
+				<button
+					role="tab"
+					aria-selected={activeTab === 'other'}
+					class="tab"
+					class:tab--active={activeTab === 'other'}
+					on:click={() => switchTab('other')}
+				>
+					<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+						<circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>
+					</svg>
+					Other
+				</button>
+			</div>
 
-			<button
-				class="btn-submit"
-				on:click={handleSubmit}
-				disabled={loading || !startAddress || !destAddress}
-			>
-				{#if loading}
-					<span class="spinner" /> Submitting…
-				{:else}
-					Submit ride request
-					<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-						<line x1="5" y1="12" x2="19" y2="12"/>
-						<polyline points="12 5 19 12 12 19"/>
-					</svg>
+			<!-- ══ RIDE FORM ══════════════════════════════════ -->
+			{#if activeTab === 'ride'}
+				<!-- Pickup -->
+				<section class="section">
+					<div class="section__head">
+						<span class="section__dot section__dot--start" />
+						<h2>Pickup location</h2>
+					</div>
+
+					<div class="address-field">
+						<div class="input-wrap">
+							<span class="icon">
+								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+									<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+								</svg>
+							</span>
+							<input
+								type="text"
+								placeholder="Search pickup address…"
+								bind:value={startQuery}
+								on:input={() => searchAddress(startQuery, 'start')}
+								disabled={loading}
+							/>
+							{#if startSearching}
+								<span class="searching-spinner" />
+							{/if}
+						</div>
+
+						{#if startResults.length > 0}
+							<ul class="results">
+								{#each startResults as r}
+									<li>
+										<button type="button" on:click={() => pickResult(r, 'start')}>
+											<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+												<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+												<circle cx="12" cy="10" r="3"/>
+											</svg>
+											{r.display_name}
+										</button>
+									</li>
+								{/each}
+							</ul>
+						{/if}
+
+						<button
+							type="button"
+							class="pin-btn"
+							class:active={pinMode === 'start'}
+							on:click={() => pinMode = pinMode === 'start' ? null : 'start'}
+						>
+							<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+								<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+								<circle cx="12" cy="10" r="3"/>
+							</svg>
+							{pinMode === 'start' ? 'Click the map to pin…' : 'Pin on map'}
+						</button>
+
+						{#if startAddress}
+							<p class="address-confirmed">
+								<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+									<polyline points="20 6 9 17 4 12"/>
+								</svg>
+								{startAddress}
+							</p>
+						{/if}
+					</div>
+				</section>
+
+				<!-- Destination -->
+				<section class="section">
+					<div class="section__head">
+						<span class="section__dot section__dot--dest" />
+						<h2>Destination</h2>
+					</div>
+
+					<div class="address-field">
+						<div class="input-wrap">
+							<span class="icon">
+								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+									<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+								</svg>
+							</span>
+							<input
+								type="text"
+								placeholder="Search destination address…"
+								bind:value={destQuery}
+								on:input={() => searchAddress(destQuery, 'dest')}
+								disabled={loading}
+							/>
+							{#if destSearching}
+								<span class="searching-spinner" />
+							{/if}
+						</div>
+
+						{#if destResults.length > 0}
+							<ul class="results">
+								{#each destResults as r}
+									<li>
+										<button type="button" on:click={() => pickResult(r, 'dest')}>
+											<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+												<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+												<circle cx="12" cy="10" r="3"/>
+											</svg>
+											{r.display_name}
+										</button>
+									</li>
+								{/each}
+							</ul>
+						{/if}
+
+						<button
+							type="button"
+							class="pin-btn"
+							class:active={pinMode === 'dest'}
+							on:click={() => pinMode = pinMode === 'dest' ? null : 'dest'}
+						>
+							<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+								<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+								<circle cx="12" cy="10" r="3"/>
+							</svg>
+							{pinMode === 'dest' ? 'Click the map to pin…' : 'Pin on map'}
+						</button>
+
+						{#if destAddress}
+							<p class="address-confirmed">
+								<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+									<polyline points="20 6 9 17 4 12"/>
+								</svg>
+								{destAddress}
+							</p>
+						{/if}
+					</div>
+				</section>
+
+				<!-- Notes -->
+				<section class="section">
+					<div class="section__head">
+						<span class="section__dot section__dot--notes" />
+						<h2>Notes <span class="optional">optional</span></h2>
+					</div>
+					<textarea
+						placeholder="Any special instructions for the driver — mobility aids, preferred route, etc."
+						bind:value={description}
+						rows="3"
+						disabled={loading}
+					/>
+				</section>
+
+				{#if pinMode}
+					<div class="map-hint">
+						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+							<circle cx="12" cy="12" r="10"/>
+							<line x1="12" y1="8" x2="12" y2="12"/>
+							<line x1="12" y1="16" x2="12.01" y2="16"/>
+						</svg>
+						Click anywhere on the map to drop the {pinMode === 'start' ? 'pickup' : 'destination'} pin
+					</div>
 				{/if}
-			</button>
+
+				<button
+					class="btn-submit"
+					on:click={handleSubmit}
+					disabled={loading || !startAddress || !destAddress}
+				>
+					{#if loading}
+						<span class="spinner" /> Submitting…
+					{:else}
+						Submit ride request
+						<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+							<line x1="5" y1="12" x2="19" y2="12"/>
+							<polyline points="12 5 19 12 12 19"/>
+						</svg>
+					{/if}
+				</button>
+
+			<!-- ══ OTHER FORM ═════════════════════════════════ -->
+			{:else}
+				<!-- Description -->
+				<section class="section">
+					<div class="section__head">
+						<span class="section__dot section__dot--notes" />
+						<h2>Description <span class="optional">optional</span></h2>
+					</div>
+					<textarea
+						placeholder="Describe what you need help with — errands, appointments, etc."
+						bind:value={otherDescription}
+						rows="3"
+						disabled={loading}
+					/>
+				</section>
+
+				<!-- Destination -->
+				<section class="section">
+					<div class="section__head">
+						<span class="section__dot section__dot--dest" />
+						<h2>Destination</h2>
+					</div>
+
+					<div class="address-field">
+						<div class="input-wrap">
+							<span class="icon">
+								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+									<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+								</svg>
+							</span>
+							<input
+								type="text"
+								placeholder="Search destination address…"
+								bind:value={otherDestQuery}
+								on:input={() => searchOtherDest(otherDestQuery)}
+								disabled={loading}
+							/>
+							{#if otherDestSearching}
+								<span class="searching-spinner" />
+							{/if}
+						</div>
+
+						{#if otherDestResults.length > 0}
+							<ul class="results">
+								{#each otherDestResults as r}
+									<li>
+										<button type="button" on:click={() => pickOtherDest(r)}>
+											<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+												<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+												<circle cx="12" cy="10" r="3"/>
+											</svg>
+											{r.display_name}
+										</button>
+									</li>
+								{/each}
+							</ul>
+						{/if}
+
+						<button
+							type="button"
+							class="pin-btn"
+							class:active={pinMode === 'dest'}
+							on:click={() => pinMode = pinMode === 'dest' ? null : 'dest'}
+						>
+							<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+								<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+								<circle cx="12" cy="10" r="3"/>
+							</svg>
+							{pinMode === 'dest' ? 'Click the map to pin…' : 'Pin on map'}
+						</button>
+
+						{#if otherDestAddress}
+							<p class="address-confirmed">
+								<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+									<polyline points="20 6 9 17 4 12"/>
+								</svg>
+								{otherDestAddress}
+							</p>
+						{/if}
+					</div>
+				</section>
+
+				{#if pinMode}
+					<div class="map-hint">
+						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+							<circle cx="12" cy="12" r="10"/>
+							<line x1="12" y1="8" x2="12" y2="12"/>
+							<line x1="12" y1="16" x2="12.01" y2="16"/>
+						</svg>
+						Click anywhere on the map to drop the destination pin
+					</div>
+				{/if}
+
+				<button
+					class="btn-submit btn-submit--other"
+					on:click={handleOtherSubmit}
+					disabled={loading || !otherDestAddress}
+				>
+					{#if loading}
+						<span class="spinner" /> Submitting…
+					{:else}
+						Submit request
+						<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+							<line x1="5" y1="12" x2="19" y2="12"/>
+							<polyline points="12 5 19 12 12 19"/>
+						</svg>
+					{/if}
+				</button>
+			{/if}
 		</aside>
 
 		<!-- Right: map -->
@@ -462,7 +685,7 @@
 				{#if pinMode}
 					<div class="map-overlay">
 						<span class="map-overlay__label">
-							{pinMode === 'start' ? '📍 Click to set pickup' : '🏁 Click to set destination'}
+							{activeTab === 'ride' && pinMode === 'start' ? '📍 Click to set pickup' : '🏁 Click to set destination'}
 						</span>
 					</div>
 				{/if}
@@ -470,18 +693,22 @@
 
 			<!-- Legend -->
 			<div class="legend">
-				<div class="legend__item">
-					<span class="legend__dot legend__dot--start" />
-					Pickup
-				</div>
+				{#if activeTab === 'ride'}
+					<div class="legend__item">
+						<span class="legend__dot legend__dot--start" />
+						Pickup
+					</div>
+				{/if}
 				<div class="legend__item">
 					<span class="legend__dot legend__dot--dest" />
 					Destination
 				</div>
-				<div class="legend__item legend__item--line">
-					<span class="legend__line" />
-					Route preview
-				</div>
+				{#if activeTab === 'ride'}
+					<div class="legend__item legend__item--line">
+						<span class="legend__line" />
+						Route preview
+					</div>
+				{/if}
 			</div>
 		</div>
 	</div>
@@ -558,6 +785,42 @@
 		font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em;
 	}
 	.subtitle { font-size: 0.875rem; color: var(--text-secondary); line-height: 1.6; }
+
+	/* ── Tabs ── */
+	.tabs {
+		display: flex;
+		gap: 0;
+		background: var(--bg-elevated);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-sm);
+		padding: 3px;
+	}
+	.tab {
+		flex: 1;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.4rem;
+		padding: 0.55rem 1rem;
+		background: none;
+		border: none;
+		border-radius: calc(var(--radius-sm) - 2px);
+		color: var(--text-secondary);
+		font-size: 0.875rem;
+		font-family: var(--font-body);
+		font-weight: 500;
+		cursor: pointer;
+		transition: background 0.18s, color 0.18s;
+	}
+	.tab:hover:not(.tab--active) {
+		color: var(--text-primary);
+		background: var(--bg-card);
+	}
+	.tab--active {
+		background: var(--bg-card);
+		color: var(--accent);
+		box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+	}
 
 	/* ── Sections ── */
 	.section { display: flex; flex-direction: column; gap: 0.875rem; }
@@ -717,6 +980,19 @@
 	}
 	.btn-submit:active:not(:disabled) { transform: translateY(0); }
 	.btn-submit:disabled { opacity: 0.45; cursor: not-allowed; }
+
+	/* Other tab submit uses a muted variant */
+	.btn-submit--other {
+		background: var(--bg-elevated);
+		color: var(--text-primary);
+		border: 1px solid var(--border);
+	}
+	.btn-submit--other:hover:not(:disabled) {
+		background: var(--bg-card);
+		border-color: var(--accent);
+		color: var(--accent);
+		box-shadow: 0 4px 20px rgba(232,255,71,0.1);
+	}
 
 	.spinner {
 		width: 15px; height: 15px;
