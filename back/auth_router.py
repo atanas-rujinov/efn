@@ -15,6 +15,7 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 class SignupRequest(BaseModel):
     name: str
     email: str
+    phone: str  # Added to capture phone number from frontend
     password: str
     role: Literal["driver", "disabled"]
     disability: Optional[str] = None  # required when role == "disabled"
@@ -46,20 +47,27 @@ def signup(payload: SignupRequest, db: Session = Depends(get_db)):
         existing = db.query(models.Driver).filter(models.Driver.email == payload.email).first()
         if existing:
             raise HTTPException(status_code=409, detail="Email already registered")
+        
+        # Added phone=payload.phone to save it to the Driver model
         user = models.Driver(
             email=payload.email,
             name=payload.name,
+            phone=payload.phone,
             password=hash_password(payload.password),
         )
     else:
         if not payload.disability:
             raise HTTPException(status_code=422, detail="disability field is required for disabled users")
+        
         existing = db.query(models.Disabled).filter(models.Disabled.email == payload.email).first()
         if existing:
             raise HTTPException(status_code=409, detail="Email already registered")
+        
+        # Added phone=payload.phone to save it to the Disabled model
         user = models.Disabled(
             email=payload.email,
             name=payload.name,
+            phone=payload.phone,
             password=hash_password(payload.password),
             disability=payload.disability,
         )

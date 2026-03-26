@@ -48,7 +48,7 @@
 
 			// Check if this driver already has an accepted ride in progress
 			const myActiveRide = allRequests.find(
-				(r) => !r.is_completed && r.is_accepted && r.driver === $user?.id
+				(r) => !r.is_completed && r.is_accepted && r.driver_rel?.id === $user?.id
 			);
 			if (myActiveRide) {
 				activeRide = myActiveRide;
@@ -58,7 +58,9 @@
 			}
 
 			// Filter for unclaimed, not accepted, and incomplete rides
-			requests = allRequests.filter((r) => !r.is_completed && r.driver === null && !r.is_accepted);
+			requests = allRequests.filter(
+			  (r) => !r.is_completed && r.driver_rel === null && !r.is_accepted
+			);
 		} catch (error) {
 			console.error('Failed to fetch requests:', error);
 			notifications.error('Failed to load available rides.');
@@ -214,26 +216,43 @@
 					{:else}
 						<div class="requests-list">
 							{#each myRequests as req}
-								<div class="request-card">
-									<div class="request-card__header">
-										<div class="request-route">
-											<div class="location">
-												<span class="dot dot-start"></span>
-												<span><strong>From:</strong> {req.start_address}</span>
-											</div>
-											<div class="location">
-												<span class="dot dot-dest"></span>
-												<span><strong>To:</strong> {req.dest_address}</span>
-											</div>
+							<div class="request-card">
+								<div class="request-card__header">
+									<div class="request-route">
+										<div class="location">
+											<span class="dot dot-start"></span>
+											<span><strong>From:</strong> {req.start_address}</span>
 										</div>
-										{#if req.is_accepted}
-											<span class="badge badge-accepted">✓ Driver on the way</span>
-										{:else}
-											<span class="badge badge-pending">⏳ Awaiting driver</span>
-										{/if}
+										<div class="location">
+											<span class="dot dot-dest"></span>
+											<span><strong>To:</strong> {req.dest_address}</span>
+										</div>
 									</div>
-									{#if req.description}<p class="request-desc">"{req.description}"</p>{/if}
+									
+									{#if req.is_accepted && req.driver_rel}
+									    <div class="driver-assigned-box">
+									        <div class="driver-main-info">
+									            <span class="badge badge-accepted">✓ Driver on the way</span>
+									            <div class="driver-profile">
+									                <span class="driver-name">{req.driver_rel.name}</span>
+									                <a href="tel:{req.driver_rel.phone}" class="driver-phone-link">
+									                    <span class="phone-icon">📞</span> {req.driver_rel.phone}
+									                </a>
+									            </div>
+									        </div>
+									        <div class="driver-avatar-large">
+									            {req.driver_rel.name.charAt(0).toUpperCase()}
+									        </div>
+									    </div>
+									{:else}
+									    <span class="badge badge-pending">⏳ Awaiting driver</span>
+									{/if}
 								</div>
+								
+								{#if req.description}
+									<p class="request-desc">"{req.description}"</p>
+								{/if}
+							</div>
 							{/each}
 						</div>
 					{/if}
@@ -379,4 +398,64 @@
 	.badge { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.3rem 0.75rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700; white-space: nowrap; flex-shrink: 0; }
 	.badge-accepted { background: #d1fae5; color: #065f46; }
 	.badge-pending { background: #fef3c7; color: #92400e; }
+
+	.driver-assigned-box {
+	    margin-top: 1rem;
+	    padding: 1.25rem;
+	    background: var(--bg-body); /* Subtle contrast against the card */
+	    border: 1px solid var(--accent); /* Highlights that someone is coming */
+	    border-radius: var(--radius);
+	    display: flex;
+	    justify-content: space-between;
+	    align-items: center;
+	    gap: 1.5rem;
+	}
+	
+	.driver-main-info {
+	    display: flex;
+	    flex-direction: column;
+	    gap: 0.75rem;
+	}
+	
+	.driver-profile {
+	    display: flex;
+	    flex-direction: column;
+	    gap: 0.25rem;
+	}
+	
+	.driver-name {
+	    font-size: 1.25rem;
+	    font-weight: 700;
+	    color: var(--text-primary);
+	}
+	
+	.driver-phone-link {
+	    font-size: 1.1rem;
+	    color: var(--accent);
+	    text-decoration: none;
+	    font-family: monospace;
+	    font-weight: 600;
+	    display: flex;
+	    align-items: center;
+	    gap: 0.5rem;
+	}
+	
+	.driver-phone-link:hover {
+	    text-decoration: underline;
+	}
+	
+	.driver-avatar-large {
+	    width: 3.5rem;
+	    height: 3.5rem;
+	    background: var(--accent);
+	    color: white;
+	    border-radius: 50%;
+	    display: flex;
+	    align-items: center;
+	    justify-content: center;
+	    font-size: 1.5rem;
+	    font-weight: 800;
+	    flex-shrink: 0;
+	    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+	}
 </style>

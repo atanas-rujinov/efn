@@ -131,7 +131,11 @@ class DriveRequestOut(BaseModel):
     dest_lon: float
     is_completed: bool
     is_accepted: Optional[bool] = None
-    driver: Optional[int] = None
+    
+    # Change this from Optional[int] to the full DriverOut model
+    # We use the alias "driver_rel" to match the relationship name in models.py
+    driver: Optional[DriverOut] = Field(None, alias="driver_rel") 
+    
     disabled: DisabledOut = Field(alias="disabled_rel")
 
     model_config = {"from_attributes": True, "populate_by_name": True}
