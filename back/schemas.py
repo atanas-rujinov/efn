@@ -104,6 +104,7 @@ class DriveRequestBase(BaseModel):
     is_completed: bool
     driver: int
     disabled: int
+    ai_advice: Optional[str] = None
 
 
 class DriveRequestCreate(DriveRequestBase):
@@ -121,6 +122,7 @@ class DriveRequestUpdate(BaseModel):
     is_completed: Optional[bool] = None
     driver: Optional[int] = None
     disabled: Optional[int] = None
+    ai_advice: Optional[str] = None
 
 
 class DriveRequestOut(BaseModel):
@@ -136,6 +138,7 @@ class DriveRequestOut(BaseModel):
     is_completed: bool
     driver: int
     disabled: int
+    ai_advice: Optional[str] = None
 
     model_config = {"from_attributes": True}
 
@@ -153,6 +156,7 @@ class ShopRequestBase(BaseModel):
     is_completed: bool
     driver: int
     disabled: int
+    ai_advice: Optional[str] = None
 
 
 class ShopRequestCreate(ShopRequestBase):
@@ -170,6 +174,7 @@ class ShopRequestUpdate(BaseModel):
     is_completed: Optional[bool] = None
     driver: Optional[int] = None
     disabled: Optional[int] = None
+    ai_advice: Optional[str] = None
 
 
 class ShopRequestOut(BaseModel):
@@ -185,6 +190,7 @@ class ShopRequestOut(BaseModel):
     is_completed: bool
     driver: int
     disabled: int
+    ai_advice: Optional[str] = None
 
     model_config = {"from_attributes": True}
 

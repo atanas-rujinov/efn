@@ -59,6 +59,7 @@ class DriveRequest(Base):
     dest_lat = Column(Double, nullable=False)
     dest_lon = Column(Double, nullable=False)
     is_completed = Column(Boolean, nullable=False)
+    ai_advice = Column(Text, nullable=True)
     driver = Column(BigInteger, ForeignKey("driver.id"), nullable=False)
     disabled = Column(BigInteger, ForeignKey("disabled.id"), nullable=False)
 
@@ -79,6 +80,7 @@ class ShopRequest(Base):
     dest_lat = Column(Double, nullable=False)
     dest_lon = Column(Double, nullable=False)
     is_completed = Column(Boolean, nullable=False)
+    ai_advice = Column(Text, nullable=True)
     driver = Column(BigInteger, ForeignKey("driver.id"), nullable=False)
     disabled = Column(BigInteger, ForeignKey("disabled.id"), nullable=False)
 

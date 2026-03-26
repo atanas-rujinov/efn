@@ -4,6 +4,7 @@ from typing import List
 
 from database import get_db
 import models, schemas
+from gemini_service import get_ai_advice
 
 router = APIRouter(prefix="/drive-requests", tags=["Drive Requests"])
 
@@ -23,7 +24,24 @@ def get_one(id: int, db: Session = Depends(get_db)):
 
 @router.post("/", response_model=schemas.DriveRequestOut, status_code=201)
 def create(payload: schemas.DriveRequestCreate, db: Session = Depends(get_db)):
-    record = models.DriveRequest(**payload.model_dump())
+    # Get the disabled person's information to fetch their disability
+    disabled_person = db.query(models.Disabled).filter(models.Disabled.id == payload.disabled).first()
+    if not disabled_person:
+        raise HTTPException(status_code=404, detail="Disabled person not found")
+    
+    # Prepare the record data
+    record_data = payload.model_dump()
+    
+    # Get AI advice based on disability and request description
+    ai_advice = get_ai_advice(
+        disability=disabled_person.disability,
+        request_description=payload.description,
+        request_type="drive"
+    )
+    record_data["ai_advice"] = ai_advice
+    
+    # Create and save the record
+    record = models.DriveRequest(**record_data)
     db.add(record)
     db.commit()
     db.refresh(record)
