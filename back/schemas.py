@@ -120,6 +120,7 @@ class DriveRequestUpdate(BaseModel):
     disabled: Optional[int] = None
 
 class DriveRequestOut(BaseModel):
+    request_type: str = "drive"
     id: int
     created_at: datetime
     description: str

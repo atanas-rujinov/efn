@@ -13,8 +13,36 @@ router = APIRouter(prefix="/drive-requests", tags=["Drive Requests"])
 
 @router.get("/", response_model=List[schemas.DriveRequestOut])
 def get_all(db: Session = Depends(get_db)):
-    return db.query(models.DriveRequest).all()
+    # 1. Fetch real Drive Requests
+    drive_records = db.query(models.DriveRequest).all()
+    for r in drive_records:
+        # Tag the real drive requests
+        r.request_type = "drive"
+    
+    # 2. Fetch Other Requests
+    other_records = db.query(models.OtherRequest).all()
+    
+    combined_others = []
+    for r in other_records:
+        # Convert to dict to inject "virtual" fields
+        obj_dict = {column.name: getattr(r, column.name) for column in r.__table__.columns}
+        
+        # THE FIX: Tag as "other" so frontend knows to use otherRequestsApi
+        obj_dict["request_type"] = "other"
+        
+        # Required dummy values for the DriveRequestOut schema
+        obj_dict["start_address"] = "N/A"
+        obj_dict["start_lat"] = 0.0
+        obj_dict["start_lon"] = 0.0
+        
+        # Ensure the nested relationships match what the frontend expects
+        # (Assuming your relationship names are disabled_rel and driver_rel)
+        obj_dict["disabled_rel"] = r.disabled_rel 
+        obj_dict["driver_rel"] = r.driver_rel
 
+        combined_others.append(obj_dict)
+
+    return list(drive_records) + combined_others
 
 @router.get("/{id}", response_model=schemas.DriveRequestOut)
 def get_one(id: int, db: Session = Depends(get_db)):

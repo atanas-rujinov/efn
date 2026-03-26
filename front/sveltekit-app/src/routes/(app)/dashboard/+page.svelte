@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { auth } from '$lib/stores/auth';
-	import { driveRequestsApi } from '$lib/api/entities';
+	// ADDED: Import both APIs
+	import { driveRequestsApi, otherRequestsApi } from '$lib/api/entities';
 	import { onMount, tick } from 'svelte';
 	import { notifications } from '$lib/stores/notifications';
 
-	// Extract the user store
 	const user = auth.user;
 	
 	let requests: any[] = [];
@@ -14,18 +14,15 @@
 	let myRequests: any[] = [];
 	let loadingMyRequests = false;
 
-	// ── Map State ──
 	let mapEl: HTMLDivElement;
 	let map: any;
 	let L: any;
 
 	onMount(() => {
-		// 1. Enforce authentication
 		const unsubAuth = auth.isAuthenticated.subscribe((val) => {
 			if (!val) goto('/login');
 		});
 
-		// 2. Fetch rides based on role
 		const unsubUser = user.subscribe((u) => {
 			if (u?.role === 'driver') {
 				fetchAvailableRequests();
@@ -45,11 +42,10 @@
 		loadingRequests = true;
 		try {
 			const allRequests = await driveRequestsApi.list();
-
-			// Check if this driver already has an accepted ride in progress
 			const myActiveRide = allRequests.find(
 				(r) => !r.is_completed && r.is_accepted && r.driver_rel?.id === $user?.id
 			);
+
 			if (myActiveRide) {
 				activeRide = myActiveRide;
 				await tick();
@@ -57,13 +53,11 @@
 				return;
 			}
 
-			// Filter for unclaimed, not accepted, and incomplete rides
 			requests = allRequests.filter(
 			  (r) => !r.is_completed && r.driver_rel === null && !r.is_accepted
 			);
 		} catch (error) {
 			console.error('Failed to fetch requests:', error);
-			notifications.error('Failed to load available rides.');
 		} finally {
 			loadingRequests = false;
 		}
@@ -78,22 +72,27 @@
 				.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 		} catch (error) {
 			console.error('Failed to fetch your requests:', error);
-			notifications.error('Failed to load your requests.');
 		} finally {
 			loadingMyRequests = false;
 		}
 	}
 
+	// FIXED: Dynamically choose the API and preserve data
 	async function acceptRequest(request: any) {
+		// Use request_type tag from backend, or guess based on the address
+		const isOther = request.request_type === 'other' || request.start_address === "N/A";
+		const api = isOther ? otherRequestsApi : driveRequestsApi;
+
 		try {
-			// Update the request with current driver ID
-			const updated = await driveRequestsApi.update(request.id, { 
+			const updated = await api.update(request.id, { 
 				driver: $user?.id,
 				is_accepted: true
 			});
-			activeRide = updated;
-			notifications.success('Ride accepted!');
 			
+			// MERGE the old request data with the update to ensure coordinates aren't lost
+			activeRide = { ...request, ...updated, request_type: isOther ? 'other' : 'drive' };
+			
+			notifications.success('Ride accepted!');
 			await tick();
 			initMap();
 		} catch (error) {
@@ -102,10 +101,12 @@
 		}
 	}
 
+	// FIXED: Dynamically choose API for cancellation
 	async function cancelRide() {
 		if (!activeRide) return;
+		const api = activeRide.request_type === 'other' ? otherRequestsApi : driveRequestsApi;
 		try {
-			await driveRequestsApi.update(activeRide.id, { is_accepted: false, driver: null });
+			await api.update(activeRide.id, { is_accepted: false, driver: null });
 		} catch (error) {
 			console.error('Cancel error:', error);
 		} finally {
@@ -114,10 +115,12 @@
 		}
 	}
 
+	// FIXED: Dynamically choose API for completion
 	async function completeRide() {
 		if (!activeRide) return;
+		const api = activeRide.request_type === 'other' ? otherRequestsApi : driveRequestsApi;
 		try {
-			await driveRequestsApi.update(activeRide.id, { is_completed: true });
+			await api.update(activeRide.id, { is_completed: true });
 			notifications.success('Ride completed!');
 			activeRide = null;
 			fetchAvailableRequests();
@@ -126,7 +129,6 @@
 		}
 	}
 
-	// ── Leaflet Loader ──
 	async function loadLeaflet(): Promise<void> {
 		return new Promise((resolve) => {
 			if ((window as any).L) { L = (window as any).L; resolve(); return; }
@@ -151,21 +153,35 @@
 		});
 	}
 
+	// FIXED: Added coordinate validation to prevent the LatLng crash
 	async function initMap() {
 		await loadLeaflet();
 		if (!mapEl || !activeRide) return;
 
+		// 1. Safety check for coordinates
+		const hasDest = activeRide.dest_lat != null && activeRide.dest_lon != null;
+		const hasStart = activeRide.start_lat != null && activeRide.start_lat !== 0;
+
+		if (!hasDest) {
+			console.error("Map Error: No destination coordinates found.");
+			return;
+		}
+
+		if (map) map.remove();
 		map = L.map(mapEl, { zoomControl: true });
 		L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-		const start = [activeRide.start_lat, activeRide.start_lon];
 		const dest = [activeRide.dest_lat, activeRide.dest_lon];
-
-		L.marker(start, { icon: makeIcon('#3b82f6') }).addTo(map).bindTooltip('Pickup');
 		L.marker(dest, { icon: makeIcon('#10b981') }).addTo(map).bindTooltip('Destination');
 
-		L.polyline([start, dest], { color: 'var(--accent)', weight: 3, dashArray: '5 10' }).addTo(map);
-		map.fitBounds(L.latLngBounds([start, dest]), { padding: [40, 40] });
+		if (hasStart) {
+			const start = [activeRide.start_lat, activeRide.start_lon];
+			L.marker(start, { icon: makeIcon('#3b82f6') }).addTo(map).bindTooltip('Pickup');
+			L.polyline([start, dest], { color: 'var(--accent)', weight: 3, dashArray: '5 10' }).addTo(map);
+			map.fitBounds(L.latLngBounds([start, dest]), { padding: [40, 40] });
+		} else {
+			map.setView(dest, 15);
+		}
 	}
 
 	function logout() {
@@ -190,7 +206,6 @@
 
 		{#if !$user}
 			<p class="status-msg">Loading your profile...</p>
-
 		{:else}
 			{#if $user.role === 'disabled'}
 				<p>Welcome back, {$user.name}.</p>
@@ -219,34 +234,42 @@
 							<div class="request-card">
 								<div class="request-card__header">
 									<div class="request-route">
+										{#if req.start_address !== "N/A"}
 										<div class="location">
 											<span class="dot dot-start"></span>
 											<span><strong>From:</strong> {req.start_address}</span>
 										</div>
+										{/if}
 										<div class="location">
 											<span class="dot dot-dest"></span>
 											<span><strong>To:</strong> {req.dest_address}</span>
 										</div>
 									</div>
 									
-									{#if req.is_accepted && req.driver_rel}
-									    <div class="driver-assigned-box">
-									        <div class="driver-main-info">
-									            <span class="badge badge-accepted">✓ Driver on the way</span>
-									            <div class="driver-profile">
-									                <span class="driver-name">{req.driver_rel.name}</span>
-									                <a href="tel:{req.driver_rel.phone}" class="driver-phone-link">
-									                    <span class="phone-icon">📞</span> {req.driver_rel.phone}
-									                </a>
-									            </div>
-									        </div>
-									        <div class="driver-avatar-large">
-									            {req.driver_rel.name.charAt(0).toUpperCase()}
-									        </div>
-									    </div>
-									{:else}
-									    <span class="badge badge-pending">⏳ Awaiting driver</span>
-									{/if}
+									<div class="request-status-info">
+										{#if req.start_address === "N/A"}
+											<span class="badge badge-other">General Request</span>
+										{/if}
+
+										{#if req.is_accepted && req.driver_rel}
+											<div class="driver-assigned-box">
+												<div class="driver-main-info">
+													<span class="badge badge-accepted">✓ Driver on the way</span>
+													<div class="driver-profile">
+														<span class="driver-name">{req.driver_rel.name}</span>
+														<a href="tel:{req.driver_rel.phone}" class="driver-phone-link">
+															<span class="phone-icon">📞</span> {req.driver_rel.phone}
+														</a>
+													</div>
+												</div>
+												<div class="driver-avatar-large">
+													{req.driver_rel.name.charAt(0).toUpperCase()}
+												</div>
+											</div>
+										{:else}
+											<span class="badge badge-pending">⏳ Awaiting driver</span>
+										{/if}
+									</div>
 								</div>
 								
 								{#if req.description}
@@ -270,10 +293,12 @@
 							<div class="map-section">
 								<div bind:this={mapEl} class="mini-map"></div>
 								<div class="route-details">
+									{#if activeRide.start_address !== "N/A"}
 									<div class="location">
 										<span class="dot dot-start"></span>
 										<span><strong>Pickup:</strong> {activeRide.start_address}</span>
 									</div>
+									{/if}
 									<div class="location">
 										<span class="dot dot-dest"></span>
 										<span><strong>Destination:</strong> {activeRide.dest_address}</span>
@@ -321,10 +346,14 @@
 										</div>
 									</div>
 									<div class="request-route">
-										<div class="location">
-											<span class="dot dot-start"></span>
-											<span><strong>From:</strong> {request.start_address}</span>
-										</div>
+										{#if request.start_address === "N/A"}
+											<span class="badge badge-other">General Request</span>
+										{:else}
+											<div class="location">
+												<span class="dot dot-start"></span>
+												<span><strong>From:</strong> {request.start_address}</span>
+											</div>
+										{/if}
 										<div class="location">
 											<span class="dot dot-dest"></span>
 											<span><strong>To:</strong> {request.dest_address}</span>
@@ -339,14 +368,13 @@
 						</div>
 					{/if}
 				{/if}
-			{:else}
-				<p>Role unknown. Please try logging in again.</p>
 			{/if}
 		{/if}
 	</main>
 </div>
 
 <style>
+	/* Existing Styles [cite: 91-122] */
 	.shell { min-height: 100vh; display: flex; flex-direction: column; background: var(--bg-body); }
 	.nav { display: flex; justify-content: space-between; align-items: center; padding: 1.25rem 2rem; border-bottom: 1px solid var(--border); background: var(--bg-card); }
 	.nav__logo { display: flex; align-items: center; gap: 0.5rem; }
@@ -384,12 +412,7 @@
 	.dot-start { background: #3b82f6; }
 	.dot-dest { background: #10b981; }
 	.request-desc { font-style: italic; color: var(--text-secondary); background: var(--bg-body); padding: 0.75rem; border-radius: var(--radius-sm); font-size: 0.9rem; }
-	.btn-small {
-		padding: 0.35rem 0.8rem;
-		font-size: 0.8rem;
-		width: fit-content; /* prevents stretching */
-		align-self: flex-start; /* keeps it compact */
-	}
+	.btn-small { padding: 0.35rem 0.8rem; font-size: 0.8rem; width: fit-content; align-self: flex-start; }
 	.btn-primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1.25rem; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; }
 
 	.my-requests-section { display: flex; flex-direction: column; gap: 1rem; }
@@ -399,11 +422,14 @@
 	.badge-accepted { background: #d1fae5; color: #065f46; }
 	.badge-pending { background: #fef3c7; color: #92400e; }
 
+	/* MODIFIED: Added style for the Other badge */
+	.badge-other { background: #e2e8f0; color: #475569; margin-bottom: 0.5rem; }
+
 	.driver-assigned-box {
 	    margin-top: 1rem;
 	    padding: 1.25rem;
-	    background: var(--bg-body); /* Subtle contrast against the card */
-	    border: 1px solid var(--accent); /* Highlights that someone is coming */
+	    background: var(--bg-body);
+	    border: 1px solid var(--accent);
 	    border-radius: var(--radius);
 	    display: flex;
 	    justify-content: space-between;
@@ -411,51 +437,15 @@
 	    gap: 1.5rem;
 	}
 	
-	.driver-main-info {
-	    display: flex;
-	    flex-direction: column;
-	    gap: 0.75rem;
-	}
-	
-	.driver-profile {
-	    display: flex;
-	    flex-direction: column;
-	    gap: 0.25rem;
-	}
-	
-	.driver-name {
-	    font-size: 1.25rem;
-	    font-weight: 700;
-	    color: var(--text-primary);
-	}
-	
-	.driver-phone-link {
-	    font-size: 1.1rem;
-	    color: var(--accent);
-	    text-decoration: none;
-	    font-family: monospace;
-	    font-weight: 600;
-	    display: flex;
-	    align-items: center;
-	    gap: 0.5rem;
-	}
-	
-	.driver-phone-link:hover {
-	    text-decoration: underline;
-	}
+	.driver-main-info { display: flex; flex-direction: column; gap: 0.75rem; }
+	.driver-profile { display: flex; flex-direction: column; gap: 0.25rem; }
+	.driver-name { font-size: 1.25rem; font-weight: 700; color: var(--text-primary); }
+	.driver-phone-link { font-size: 1.1rem; color: var(--accent); text-decoration: none; font-family: monospace; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; }
+	.driver-phone-link:hover { text-decoration: underline; }
 	
 	.driver-avatar-large {
-	    width: 3.5rem;
-	    height: 3.5rem;
-	    background: var(--accent);
-	    color: white;
-	    border-radius: 50%;
-	    display: flex;
-	    align-items: center;
-	    justify-content: center;
-	    font-size: 1.5rem;
-	    font-weight: 800;
-	    flex-shrink: 0;
-	    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+	    width: 3.5rem; height: 3.5rem; background: var(--accent); color: white; border-radius: 50%;
+	    display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800;
+	    flex-shrink: 0; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 	}
 </style>
