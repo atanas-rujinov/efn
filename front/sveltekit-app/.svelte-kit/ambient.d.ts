@@ -103,6 +103,7 @@ declare module '$env/static/private' {
 	export const npm_lifecycle_script: string;
 	export const SSH_AUTH_SOCK: string;
 	export const XDG_GREETER_DATA_DIR: string;
+	export const HOST: string;
 	export const SHELL: string;
 	export const LC_NAME: string;
 	export const npm_package_version: string;
@@ -283,6 +284,7 @@ declare module '$env/dynamic/private' {
 		npm_lifecycle_script: string;
 		SSH_AUTH_SOCK: string;
 		XDG_GREETER_DATA_DIR: string;
+		HOST: string;
 		SHELL: string;
 		LC_NAME: string;
 		npm_package_version: string;

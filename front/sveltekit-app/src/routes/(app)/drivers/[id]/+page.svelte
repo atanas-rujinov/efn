@@ -49,14 +49,14 @@
 </script>
 
 <svelte:head>
-	<title>{stats?.driver_name ?? 'Driver'} — Fleet</title>
+	<title>{stats?.driver_name ?? 'Driver'} — Accessride</title>
 </svelte:head>
 
 <div class="shell">
 	<nav class="nav">
 		<div class="nav__logo">
 			<span class="nav__mark">▲</span>
-			<span class="nav__name">Fleet</span>
+			<span class="nav__name">Accessride</span>
 		</div>
 		<button class="nav__back" on:click={() => history.back()}>← Back</button>
 	</nav>
@@ -143,7 +143,7 @@
 
 	/* Profile header */
 	.profile-header { display: flex; align-items: center; gap: 1.5rem; }
-	.profile-avatar { width: 4.5rem; height: 4.5rem; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.75rem; font-weight: 800; flex-shrink: 0; box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
+	.profile-avatar { width: 4.5rem; height: 4.5rem; border-radius: 50%; background: var(--accent); color: rgb(0, 0, 0); display: flex; align-items: center; justify-content: center; font-size: 1.75rem; font-weight: 800; flex-shrink: 0; box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
 	.profile-info { display: flex; flex-direction: column; gap: 0.4rem; }
 	h1 { font-family: var(--font-display); font-size: 1.75rem; font-weight: 700; margin: 0; }
 	.rating-row { display: flex; align-items: center; gap: 0.5rem; }
@@ -172,5 +172,5 @@
 
 	/* CTA */
 	.cta-btn { align-self: flex-start; text-decoration: none; padding: 0.65rem 1.5rem; font-size: 0.95rem; }
-	.btn-primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1.25rem; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; }
+	.btn-primary { background: var(--accent); color: rgb(0, 0, 0); border: none; padding: 0.5rem 1.25rem; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; }
 </style>

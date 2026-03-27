@@ -36,14 +36,14 @@
 	}
 </script>
 
-<svelte:head><title>Sign in — Fleet</title></svelte:head>
+<svelte:head><title>Sign in — Accessride</title></svelte:head>
 
 <div class="shell">
 	<aside class="brand">
 		<div class="brand__inner">
 			<div class="logo">
 				<span class="logo__mark">▲</span>
-				<span class="logo__name">Fleet</span>
+				<span class="logo__name">Accessride</span>
 			</div>
 			<h1>Welcome back.</h1>
 			<p>Sign in to your account to continue.</p>
@@ -55,6 +55,28 @@
 			<div class="mobile-header">
 				<span class="logo__mark">▲</span>
 				<h2>Sign in</h2>
+			</div>
+
+			<!-- Role selector -->
+			<div class="role-selector">
+				<button
+					class="role-btn"
+					class:active={role === 'disabled'}
+					on:click={() => role = 'disabled'}
+					disabled={loading}
+					type="button"
+				>
+					I need help
+				</button>
+				<button
+					class="role-btn"
+					class:active={role === 'driver'}
+					on:click={() => role = 'driver'}
+					disabled={loading}
+					type="button"
+				>
+					I'm a volunteer
+				</button>
 			</div>
 
 			<div class="input-wrap">
@@ -146,6 +168,36 @@
 	.mobile-header { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
 	@media (min-width: 768px) { .mobile-header { display: none; } }
 	.mobile-header h2 { font-family: var(--font-display); font-size: 2rem; font-weight: 700; }
+
+	/* ── Role selector ── */
+	.role-selector {
+		display: flex;
+		gap: 0.5rem;
+		background: var(--bg-body);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-sm);
+		padding: 0.25rem;
+	}
+	.role-btn {
+		flex: 1;
+		padding: 0.5rem 0.75rem;
+		background: none;
+		border: none;
+		border-radius: calc(var(--radius-sm) - 2px);
+		color: var(--text-secondary);
+		font-family: inherit;
+		font-size: 0.875rem;
+		font-weight: 500;
+		cursor: pointer;
+		transition: background 0.15s, color 0.15s;
+	}
+	.role-btn:hover:not(:disabled) { color: var(--text-primary); }
+	.role-btn.active {
+		background: var(--accent);
+		color: #080a0f;
+		font-weight: 700;
+	}
+	.role-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 	/* ── Inputs ── */
 	.input-wrap { display: flex; flex-direction: column; gap: 0.5rem; }

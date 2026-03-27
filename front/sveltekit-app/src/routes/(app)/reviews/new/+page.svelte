@@ -145,13 +145,13 @@
 	}
 </script>
 
-<svelte:head><title>Leave a Review — Fleet</title></svelte:head>
+<svelte:head><title>Leave a Review — Accessride</title></svelte:head>
 
 <div class="shell">
 	<nav class="nav">
 		<div class="nav__logo">
 			<span class="nav__mark">▲</span>
-			<span class="nav__name">Fleet</span>
+			<span class="nav__name">Accessride</span>
 		</div>
 		<button class="nav__back" on:click={() => goto('/dashboard')}>← Dashboard</button>
 	</nav>
@@ -165,9 +165,9 @@
 
 		{:else if eligibleDrivers.length === 0}
 			<div class="empty-state">
-				<span class="empty-icon">🚗</span>
-				<p>You haven't completed any rides yet.</p>
-				<a href="/requests/new" class="btn-primary">Request a ride</a>
+				<span class="empty-icon">🙁</span>
+				<p>You don't have any completed requests yet.</p>
+				<a href="/requests/new" class="btn-primary">Request help</a>
 			</div>
 
 		{:else if !selectedDriver}
@@ -292,7 +292,7 @@
 	.chevron { color: var(--text-secondary); flex-shrink: 0; }
 
 	/* Avatar */
-	.avatar { width: 2.5rem; height: 2.5rem; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1rem; flex-shrink: 0; }
+	.avatar { width: 2.5rem; height: 2.5rem; border-radius: 50%; background: var(--accent); color: rgb(0, 0, 0); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1rem; flex-shrink: 0; }
 	.avatar-lg { width: 3rem; height: 3rem; font-size: 1.25rem; }
 
 	/* Badges */
@@ -325,7 +325,7 @@
 
 	/* Submit */
 	.submit-btn { width: 100%; padding: 0.75rem; font-size: 1rem; }
-	.btn-primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1.25rem; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; transition: opacity 0.15s; }
+	.btn-primary { background: var(--accent); color: rgb(0, 0, 0); border: none; padding: 0.5rem 1.25rem; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; transition: opacity 0.15s; }
 	.btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
 	.btn-primary:not(:disabled):hover { opacity: 0.88; }
 </style>

@@ -16,7 +16,7 @@ GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 class GeminiDisabilityGrouper:
     def __init__(self, api_key: Optional[str] = None, model: str = "llama-3.1-8b-instant"):
-        self.api_key = api_key or os.getenv("GROQ_API_KEY")
+        self.api_key = api_key or os.getenv("PUBLIC_GROQ_API_KEY")
         self.model = model
         if not self.api_key:
             print("[Groq] GROQ_API_KEY not set — using fallback grouping.")

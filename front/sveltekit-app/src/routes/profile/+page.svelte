@@ -69,7 +69,7 @@
 	}
 
 	$: initial = ($user?.name ?? '?').charAt(0).toUpperCase();
-	$: roleLabel = $user?.role === 'driver' ? 'Volunteer Driver' : 'Passenger';
+	$: roleLabel = $user?.role === 'driver' ? 'Volunteer' : 'Impared';
 </script>
 
 <div class="shell">
@@ -199,7 +199,7 @@
 
 	/* Identity card */
 	.identity-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem 1.5rem; display: flex; flex-direction: column; align-items: center; gap: 1rem; text-align: center; }
-	.avatar { width: 5rem; height: 5rem; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 800; flex-shrink: 0; }
+	.avatar { width: 5rem; height: 5rem; border-radius: 50%; background: var(--accent); color: rgb(0, 0, 0); display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 800; flex-shrink: 0; }
 	.identity-info { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
 	.identity-name { font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; margin: 0; }
 	.role-badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700; }
@@ -229,7 +229,7 @@
 	.btn-edit:hover { border-color: var(--accent); color: var(--accent); }
 	.form-actions { display: flex; gap: 0.75rem; justify-content: flex-end; padding-top: 0.5rem; border-top: 1px solid var(--border); }
 	.btn-cancel { background: none; border: 1px solid var(--border); color: var(--text-secondary); padding: 0.5rem 1.25rem; border-radius: var(--radius-sm); font-size: 0.875rem; cursor: pointer; }
-	.btn-save { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1.5rem; border-radius: var(--radius-sm); font-weight: 600; font-size: 0.875rem; cursor: pointer; transition: opacity 0.15s; }
+	.btn-save { background: var(--accent); color: rgb(0, 0, 0); border: none; padding: 0.5rem 1.5rem; border-radius: var(--radius-sm); font-weight: 600; font-size: 0.875rem; cursor: pointer; transition: opacity 0.15s; }
 	.btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
 	.btn-save:not(:disabled):hover { opacity: 0.85; }
 </style>

@@ -273,7 +273,7 @@ STRICT RULES:
 	function makeIcon(color: string) {
 		return L.divIcon({
 			className: '',
-			html: `<div style="width:18px;height:18px;border-radius:50% 50% 50% 0;background:${color};border:2px solid #fff;transform:rotate(-45deg);box-shadow:0 2px 8px rgba(0,0,0,0.4)"></div>`,
+			html: `<div style="width:18px;height:18px;border-radius:50% 50% 50% 0;background:${color};border:2px solid rgb(0, 0, 0);transform:rotate(-45deg);box-shadow:0 2px 8px rgba(0,0,0,0.4)"></div>`,
 			iconSize: [18, 18],
 			iconAnchor: [9, 18],
 		});
@@ -329,13 +329,13 @@ STRICT RULES:
 	}
 </script>
 
-<svelte:head><title>Dashboard — Fleet</title></svelte:head>
+<svelte:head><title>Dashboard — Accessride</title></svelte:head>
 
 <div class="shell">
 	<nav class="nav">
 		<div class="nav__logo">
 			<span class="nav__mark">▲</span>
-			<span class="nav__name">Fleet</span>
+			<span class="nav__name">Accessride</span>
 		</div>
 		<button class="nav__logout" on:click={logout}>Sign out</button>
 		<a href="/profile" class="nav__profile">Profile</a>
@@ -351,10 +351,9 @@ STRICT RULES:
 				<p>Welcome back, {$user.name}.</p>
 				<div class="actions">
 					<a href="/requests/new" class="action-card">
-						<span class="action-card__icon">🚗</span>
+						<span class="action-card__icon">✋</span>
 						<div>
-							<strong>Request a ride</strong>
-							<span>Set pickup & destination</span>
+							<strong>Request help</strong>
 						</div>
 						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 							<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
@@ -404,7 +403,7 @@ STRICT RULES:
 										{#if req.is_accepted && req.driver_rel}
 											<div class="driver-assigned-box">
 												<div class="driver-main-info">
-													<span class="badge badge-accepted">✓ Driver on the way</span>
+													<span class="badge badge-accepted">✓ Helper on the way</span>
 													<div class="driver-profile">
 														<a href="/drivers/{req.driver_rel.id}" class="driver-name">{req.driver_rel.name}</a>
 														<a href="tel:{req.driver_rel.phone}" class="driver-phone-link">
@@ -417,16 +416,16 @@ STRICT RULES:
 												</div>
 											</div>
 											<button class="btn-reject-driver" on:click={() => rejectDriver(req)}>
-												✕ Reject this driver
+												✕ Reject this helper
 											</button>
 										{:else}
-											<span class="badge badge-pending">⏳ Awaiting driver</span>
+											<span class="badge badge-pending">⏳ Awaiting helper</span>
 										{/if}
 									</div>
 								</div>
 								
 								{#if req.description}
-									<p class="request-desc">"{req.description}"</p>
+									<p class="request-desc">{req.description}</p>
 								{/if}
 								{#if !req.is_accepted}
 									<button
@@ -558,7 +557,7 @@ STRICT RULES:
 											<span><strong>To:</strong> {request.dest_address}</span>
 										</div>
 									</div>
-									{#if request.description}<p class="request-desc">"{request.description}"</p>{/if}
+									{#if request.description}<p class="request-desc">{request.description}</p>{/if}
 									<button class="btn-primary btn-small" on:click={() => acceptRequest(request)}>
 										Accept Ride
 									</button>
@@ -605,18 +604,31 @@ STRICT RULES:
 	.requests-list { display: flex; flex-direction: column; gap: 1rem; }
 	.request-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
 	.requester-info { display: flex; align-items: center; gap: 0.75rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
-	.requester-avatar { width: 2.25rem; height: 2.25rem; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+	.requester-avatar { width: 2.25rem; height: 2.25rem; border-radius: 50%; background: var(--accent); color: rgb(0, 0, 0); display: flex; align-items: center; justify-content: center; font-weight: 700; }
 	.location { display: flex; align-items: center; gap: 0.75rem; }
 	.dot { width: 10px; height: 10px; border-radius: 50%; }
 	.dot-start { background: #3b82f6; }
 	.dot-dest { background: #10b981; }
-	.request-desc { font-style: italic; color: var(--text-secondary); background: var(--bg-body); padding: 0.75rem; border-radius: var(--radius-sm); font-size: 0.9rem; }
+	.request-desc {
+	  font-style: normal;                /* remove italic */
+	  color: var(--text-primary);        /* stronger contrast */
+	  background: var(--bg-body);
+		
+	  font-size: 1.05rem;                /* bigger text */
+	  line-height: 1.6;                  /* easier reading */
+	  font-weight: 500;                  /* slightly emphasized */
+
+	  padding: 1rem 1.1rem;
+	  border-radius: var(--radius-sm);
+
+	  border-left: 4px solid var(--accent); /* visual importance */
+	}
 	.btn-small { padding: 0.35rem 0.8rem; font-size: 0.8rem; width: fit-content; align-self: flex-start; }
 	.btn-remove { background: none; border: 1px solid #f87171; color: #ef4444; padding: 0.35rem 0.8rem; border-radius: var(--radius-sm); font-size: 0.8rem; cursor: pointer; width: fit-content; align-self: flex-start; transition: background 0.15s, color 0.15s; }
-	.btn-remove:hover { background: #ef4444; color: #fff; }
+	.btn-remove:hover { background: #ef4444; color: rgb(0, 0, 0); }
 	.btn-reject-driver { background: none; border: 1px solid #f87171; color: #ef4444; padding: 0.4rem 0.9rem; border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: 600; cursor: pointer; width: fit-content; margin-top: 0.5rem; transition: background 0.15s, color 0.15s; }
-	.btn-reject-driver:hover { background: #ef4444; color: #fff; }
-	.btn-primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1.25rem; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; }
+	.btn-reject-driver:hover { background: #ef4444; color: rgb(0, 0, 0); }
+	.btn-primary { background: var(--accent); color: rgb(0, 0, 0); border: none; padding: 0.5rem 1.25rem; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; }
 
 	.my-requests-section { display: flex; flex-direction: column; gap: 1rem; }
 	.my-requests-section h2 { font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; }
@@ -647,7 +659,7 @@ STRICT RULES:
 	.driver-phone-link:hover { text-decoration: underline; }
 	
 	.driver-avatar-large {
-	    width: 3.5rem; height: 3.5rem; background: var(--accent); color: white; border-radius: 50%;
+	    width: 3.5rem; height: 3.5rem; background: var(--accent); color: rgb(0, 0, 0); border-radius: 50%;
 	    display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800;
 	    flex-shrink: 0; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 	}
@@ -665,7 +677,7 @@ STRICT RULES:
 	.chat-msg--user { justify-content: flex-end; }
 	.chat-msg--model { justify-content: flex-start; }
 	.chat-msg__bubble { max-width: 80%; padding: 0.6rem 0.9rem; border-radius: 1rem; font-size: 0.875rem; line-height: 1.5; white-space: pre-wrap; }
-	.chat-msg--user .chat-msg__bubble { background: var(--accent); color: #fff; border-bottom-right-radius: 0.25rem; }
+	.chat-msg--user .chat-msg__bubble { background: var(--accent); color: rgb(0, 0, 0); border-bottom-right-radius: 0.25rem; }
 	.chat-msg--model .chat-msg__bubble { background: var(--bg-body); border: 1px solid var(--border); color: var(--text-primary); border-bottom-left-radius: 0.25rem; }
 	.chat-msg__bubble--typing { display: flex; align-items: center; gap: 4px; padding: 0.75rem 1rem; }
 	.chat-msg__bubble--typing span { width: 7px; height: 7px; border-radius: 50%; background: var(--text-secondary); animation: bounce 1.2s infinite; }
@@ -675,7 +687,7 @@ STRICT RULES:
 	.chatbox__input-row { display: flex; gap: 0.5rem; padding: 0.75rem 1rem; border-top: 1px solid var(--border); }
 	.chatbox__input { flex: 1; background: var(--bg-body); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.6rem 0.75rem; font-size: 0.875rem; color: var(--text-primary); font-family: inherit; resize: none; line-height: 1.4; }
 	.chatbox__input:focus { outline: none; border-color: var(--accent); }
-	.chatbox__send { background: var(--accent); color: #fff; border: none; border-radius: var(--radius-sm); padding: 0.6rem 1rem; font-weight: 600; font-size: 0.875rem; cursor: pointer; white-space: nowrap; transition: opacity 0.15s; }
+	.chatbox__send { background: var(--accent); color: rgb(0, 0, 0); border: none; border-radius: var(--radius-sm); padding: 0.6rem 1rem; font-weight: 600; font-size: 0.875rem; cursor: pointer; white-space: nowrap; transition: opacity 0.15s; }
 	.chatbox__send:disabled { opacity: 0.4; cursor: not-allowed; }
 	.chatbox__send:not(:disabled):hover { opacity: 0.85; }
 </style>

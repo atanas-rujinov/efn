@@ -151,7 +151,7 @@
 			className: '',
 			html: `<div style="
 				width:22px;height:22px;border-radius:50% 50% 50% 0;
-				background:${color};border:2px solid #fff;
+				background:${color};border:2px solid rgb(0, 0, 0);
 				transform:rotate(-45deg);
 				box-shadow:0 2px 8px rgba(0,0,0,0.4)"></div>`,
 			iconSize: [22, 22],
@@ -335,7 +335,7 @@
 	}
 </script>
 
-<svelte:head><title>New request — Fleet</title></svelte:head>
+<svelte:head><title>New request — Accessride</title></svelte:head>
 
 <div class="page">
 	<!-- Top nav -->
@@ -349,7 +349,7 @@
 		</a>
 		<div class="nav__logo">
 			<span class="nav__mark">▲</span>
-			<span class="nav__name">Fleet</span>
+			<span class="nav__name">Accessride</span>
 		</div>
 		<div style="width:64px" />
 	</nav>
@@ -530,7 +530,7 @@
 				<section class="section">
 					<div class="section__head">
 						<span class="section__dot section__dot--notes" />
-						<h2>Notes <span class="optional">optional</span></h2>
+						<h2>Notes <span class="optional">required</span></h2>
 					</div>
 					<textarea
 						placeholder="Any special instructions for the driver — mobility aids, preferred route, etc."
@@ -573,7 +573,7 @@
 				<section class="section">
 					<div class="section__head">
 						<span class="section__dot section__dot--notes" />
-						<h2>Description <span class="optional">optional</span></h2>
+						<h2>Description <span class="optional">required</span></h2>
 					</div>
 					<textarea
 						placeholder="Describe what you need help with — errands, appointments, etc."

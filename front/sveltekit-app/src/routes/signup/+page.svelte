@@ -82,14 +82,14 @@
 	}
 </script>
 
-<svelte:head><title>Create account — Fleet</title></svelte:head>
+<svelte:head><title>Create account — Accessride</title></svelte:head>
 
 <div class="shell">
 	<aside class="brand">
 		<div class="brand__inner">
 			<div class="logo">
 				<span class="logo__mark">▲</span>
-				<span class="logo__name">Fleet</span>
+				<span class="logo__name">Accessride</span>
 			</div>
 
 			<div class="brand__copy">
