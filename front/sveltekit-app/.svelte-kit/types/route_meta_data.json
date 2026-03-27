@@ -3,6 +3,7 @@
 	"/(app)/dashboard": [],
 	"/(app)/drivers/[id]": [],
 	"/login": [],
+	"/profile": [],
 	"/(app)/requests/new": [],
 	"/(app)/reviews/new": [],
 	"/signup": []

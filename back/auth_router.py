@@ -37,6 +37,8 @@ class MeResponse(BaseModel):
     name: str
     email: str
     role: str
+    phone: Optional[str] = None
+    disability: Optional[str] = None
 
 
 # ── POST /auth/signup ─────────────────────────────────────────────────────────
@@ -105,4 +107,6 @@ def me(current_user=Depends(get_current_user)):
         name=current_user.name,
         email=current_user.email,
         role=current_user.role,
+        phone=getattr(current_user, 'phone', None),
+        disability=getattr(current_user, 'disability', None),
     )

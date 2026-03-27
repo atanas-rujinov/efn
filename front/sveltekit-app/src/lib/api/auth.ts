@@ -32,12 +32,12 @@ export interface AuthResponse {
     token_type: string;
 }
 
-export interface Me {
+interface User {
     id: number;
     name: string;
     email: string;
-    phone?: string; // Optional if you also return it in /auth/me
     role: Role;
+    phone?: string;
     disability?: string;
 }
 

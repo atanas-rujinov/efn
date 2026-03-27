@@ -325,6 +325,7 @@ STRICT RULES:
 			<span class="nav__name">Fleet</span>
 		</div>
 		<button class="nav__logout" on:click={logout}>Sign out</button>
+		<a href="/profile" class="nav__profile">Profile</a>
 	</nav>
 
 	<main class="main">
