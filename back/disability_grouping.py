@@ -11,18 +11,15 @@ import models
 
 load_dotenv()
 
-GEMINI_API_URL = (
-    "https://generativelanguage.googleapis.com/v1beta/models"
-    "/{model}:generateContent?key={api_key}"
-)
+GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 
 class GeminiDisabilityGrouper:
-    def __init__(self, api_key: Optional[str] = None, model: str = "gemini-2.0-flash"):
-        self.api_key = api_key or os.getenv("GEMINI_API_KEY")
+    def __init__(self, api_key: Optional[str] = None, model: str = "llama-3.1-8b-instant"):
+        self.api_key = api_key or os.getenv("GROQ_API_KEY")
         self.model = model
         if not self.api_key:
-            print("[Gemini] GEMINI_API_KEY not set — using fallback grouping.")
+            print("[Groq] GROQ_API_KEY not set — using fallback grouping.")
 
     def group_disabilities(self, disabilities: List[str]) -> List[dict]:
         if not disabilities:
@@ -44,19 +41,26 @@ class GeminiDisabilityGrouper:
                 ]
             )
 
-            url = GEMINI_API_URL.format(model=self.model, api_key=self.api_key)
             body = {
-                "contents": [{"parts": [{"text": prompt}]}],
-                "generationConfig": {"temperature": 0},
+                "model": self.model,
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0,
+                "max_tokens": 1024,
             }
-            resp = requests.post(url, json=body, timeout=15)
-            
+            resp = requests.post(
+                GROQ_API_URL,
+                json=body,
+                headers={
+                    "Authorization": f"Bearer {self.api_key}",
+                    "Content-Type": "application/json",
+                },
+                timeout=15,
+            )
             resp.raise_for_status()
 
             data = resp.json()
-            text = data["candidates"][0]["content"]["parts"][0]["text"]
-            # Strip markdown fences if model ignores the instruction
-            text = text.strip().lstrip("```json").lstrip("```").rstrip("```").strip()
+            text = data["choices"][0]["message"]["content"]
+
             parsed = json.loads(text)
             print(parsed)
             groups = parsed.get("groups", [])

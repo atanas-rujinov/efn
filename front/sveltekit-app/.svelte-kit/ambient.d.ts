@@ -167,6 +167,8 @@ declare module '$env/static/private' {
  */
 declare module '$env/static/public' {
 	export const PUBLIC_API_BASE_URL: string;
+	export const PUBLIC_GEMINI_API_KEY: string;
+	export const PUBLIC_GROQ_API_KEY: string;
 }
 
 /**
@@ -364,6 +366,8 @@ declare module '$env/dynamic/private' {
 declare module '$env/dynamic/public' {
 	export const env: {
 		PUBLIC_API_BASE_URL: string;
+		PUBLIC_GEMINI_API_KEY: string;
+		PUBLIC_GROQ_API_KEY: string;
 		[key: `PUBLIC_${string}`]: string | undefined;
 	}
 }
