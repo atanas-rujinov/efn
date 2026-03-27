@@ -25,6 +25,7 @@ cd back
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+pip install bcrypt<4.0.0 # ENSURE FORCING OLDER BCRYPT
 ```
 
 ### Create backend `.env`
