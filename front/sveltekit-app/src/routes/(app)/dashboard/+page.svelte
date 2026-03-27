@@ -188,6 +188,19 @@ STRICT RULES:
 		}
 	}
 
+	async function removeRequest(request: any) {
+		const isOther = request.request_type === 'other' || request.start_address === "N/A";
+		const api = isOther ? otherRequestsApi : driveRequestsApi;
+		try {
+			await api.delete(request.id);
+			myRequests = myRequests.filter((r) => r.id !== request.id);
+			notifications.success('Request removed.');
+		} catch (error) {
+			console.error('Remove error:', error);
+			notifications.error('Could not remove the request.');
+		}
+	}
+
 	// FIXED: Dynamically choose the API and preserve data
 	async function acceptRequest(request: any) {
 		// Use request_type tag from backend, or guess based on the address
@@ -398,6 +411,12 @@ STRICT RULES:
 								{#if req.description}
 									<p class="request-desc">"{req.description}"</p>
 								{/if}
+								{#if !req.is_accepted}
+									<button
+										class="btn-remove"
+										on:click={() => removeRequest(req)}
+									>Remove request</button>
+								{/if}
 							</div>
 							{/each}
 						</div>
@@ -576,6 +595,8 @@ STRICT RULES:
 	.dot-dest { background: #10b981; }
 	.request-desc { font-style: italic; color: var(--text-secondary); background: var(--bg-body); padding: 0.75rem; border-radius: var(--radius-sm); font-size: 0.9rem; }
 	.btn-small { padding: 0.35rem 0.8rem; font-size: 0.8rem; width: fit-content; align-self: flex-start; }
+	.btn-remove { background: none; border: 1px solid #f87171; color: #ef4444; padding: 0.35rem 0.8rem; border-radius: var(--radius-sm); font-size: 0.8rem; cursor: pointer; width: fit-content; align-self: flex-start; transition: background 0.15s, color 0.15s; }
+	.btn-remove:hover { background: #ef4444; color: #fff; }
 	.btn-primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1.25rem; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; }
 
 	.my-requests-section { display: flex; flex-direction: column; gap: 1rem; }
