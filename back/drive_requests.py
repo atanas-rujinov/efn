@@ -72,6 +72,27 @@ def create(
     return record
 
 
+@router.patch("/{id}/reject-driver", response_model=schemas.DriveRequestOut)
+def reject_driver(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_disabled),
+):
+    record = db.query(models.DriveRequest).filter(models.DriveRequest.id == id).first()
+    if not record:
+        raise HTTPException(status_code=404, detail="Drive request not found")
+    if record.disabled != current_user.id:
+        raise HTTPException(status_code=403, detail="You can only reject drivers on your own requests")
+    if not record.is_accepted or record.driver is None:
+        raise HTTPException(status_code=400, detail="No driver is currently assigned to this request")
+
+    record.driver = None
+    record.is_accepted = None
+    db.commit()
+    db.refresh(record)
+    return record
+
+
 @router.patch("/{id}", response_model=schemas.DriveRequestOut)
 def update(id: int, payload: schemas.DriveRequestUpdate, db: Session = Depends(get_db)):
     record = db.query(models.DriveRequest).filter(models.DriveRequest.id == id).first()

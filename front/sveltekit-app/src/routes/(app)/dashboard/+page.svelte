@@ -310,6 +310,19 @@ STRICT RULES:
 		}
 	}
 
+	async function rejectDriver(req: any) {
+		const isOther = req.request_type === 'other' || req.start_address === 'N/A';
+		const api = isOther ? otherRequestsApi : driveRequestsApi;
+		try {
+			await api.update(req.id, { is_accepted: null, driver: null });
+			notifications.success('Driver rejected. Your request is open again.');
+			await fetchMyRequests($user!.id);
+		} catch (error) {
+			console.error('Reject error:', error);
+			notifications.error('Could not reject the driver.');
+		}
+	}
+
 	function logout() {
 		auth.logout();
 		goto('/login');
@@ -403,6 +416,9 @@ STRICT RULES:
 													{req.driver_rel.name.charAt(0).toUpperCase()}
 												</div>
 											</div>
+											<button class="btn-reject-driver" on:click={() => rejectDriver(req)}>
+												✕ Reject this driver
+											</button>
 										{:else}
 											<span class="badge badge-pending">⏳ Awaiting driver</span>
 										{/if}
@@ -598,6 +614,8 @@ STRICT RULES:
 	.btn-small { padding: 0.35rem 0.8rem; font-size: 0.8rem; width: fit-content; align-self: flex-start; }
 	.btn-remove { background: none; border: 1px solid #f87171; color: #ef4444; padding: 0.35rem 0.8rem; border-radius: var(--radius-sm); font-size: 0.8rem; cursor: pointer; width: fit-content; align-self: flex-start; transition: background 0.15s, color 0.15s; }
 	.btn-remove:hover { background: #ef4444; color: #fff; }
+	.btn-reject-driver { background: none; border: 1px solid #f87171; color: #ef4444; padding: 0.4rem 0.9rem; border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: 600; cursor: pointer; width: fit-content; margin-top: 0.5rem; transition: background 0.15s, color 0.15s; }
+	.btn-reject-driver:hover { background: #ef4444; color: #fff; }
 	.btn-primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1.25rem; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; }
 
 	.my-requests-section { display: flex; flex-direction: column; gap: 1rem; }
